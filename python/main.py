@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-#from pydantic import BaseModel
+# from pydantic import BaseModel
 import httpx
 
 app = FastAPI()
@@ -14,13 +14,13 @@ async def get_remoteok_data():
             response = await client.get(url)
             response.raise_for_status()
             return response.json()
-            
+
         except httpx.HTTPStatusError as exc:
             raise HTTPException(
                 status_code=exc.response.status_code,
                 detail=f"External server error: {exc}"
             )
-            
+  
         except httpx.RequestError as exc:
             raise HTTPException(
                 status_code=503,
