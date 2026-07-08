@@ -20,7 +20,7 @@ async def get_remoteok_data():
                 status_code=exc.response.status_code,
                 detail=f"External server error: {exc}"
             )
-  
+
         except httpx.RequestError as exc:
             raise HTTPException(
                 status_code=503,
