@@ -46,7 +46,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
     for index, job in enumerate(job_json):
 
         new_job = JobListing(title=job["position"],
-                             company=job["comapny"],
+                             company=job["company"],
                              date_posted=job["date"],
                              location=job["location"],
                              min_salary=job["salary_min"],
