@@ -35,7 +35,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
     """
 
     search_params = {
-        "tags":query_tags,
+        "tags": query_tags,
         "position": position,
         "date": date
     }
@@ -62,6 +62,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
 
     return job_dict
 
+
 @app.post("/jobs/")
 async def process_job(job: JobListing):
     """
@@ -76,7 +77,7 @@ async def process_job(job: JobListing):
         if char == ',' and index + 2 == len(job.location):
             stop_index = index
             break
-    
+
     job.location = job.location[0:stop_index + 1]
 
     if job.min_salary == 0:
@@ -86,6 +87,7 @@ async def process_job(job: JobListing):
         job.max_salary = None
 
     return job
+
 
 @app.get("/jobs")
 def get_titles():
