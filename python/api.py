@@ -2,12 +2,11 @@ import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
-# pip install requests fastapi pydantic typing
+# pip install requests fastapi[standard] pydantic typing
 
 app = FastAPI()
 url = "https://remoteok.com/api"
 titles = []
-job_dict = {}
 
 
 class JobListing(BaseModel):
@@ -33,6 +32,8 @@ def get_job_postings(query_tags: str, position: str, date: str):
     'company_logo', 'position', 'tags', 'description', 'location',
     'apply_url', 'salary_min', 'salary_max', 'logo', and 'url' per job posting
     """
+
+    job_dict = {}
 
     search_params = {
         "tags": query_tags,
@@ -63,8 +64,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
     return job_dict
 
 
-@app.post("/jobs/")
-async def process_job(job: JobListing):
+def process_job(job: JobListing) -> JobListing:
     """
     Normalizes data for one job under the JobListing object.
     """
@@ -73,7 +73,7 @@ async def process_job(job: JobListing):
     job.date_posted = job.date_posted[0:10]
 
     # standardize job location to only include relevant parts without extraneous characters
-    for index, char in job.location:
+    for index, char in enumerate(job.location):
         if char == ',' and index + 2 == len(job.location):
             stop_index = index
             break
@@ -89,8 +89,5 @@ async def process_job(job: JobListing):
     return job
 
 
-@app.get("/jobs")
-def get_titles():
-    for job in job_dict:
-        titles.append(job["title"])
-    return titles
+if __name__ == "__main__":
+    get_job_postings("Accountant", "Accountant", "2026-07-12")
