@@ -130,4 +130,3 @@ def delete_posting(collection, source_id: str):
 
 def count(collection) -> int:
     return collection.count()
-
