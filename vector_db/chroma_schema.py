@@ -11,7 +11,7 @@ from pathlib import Path
 import chromadb
 from chromadb.config import Settings
 
-# Client setup 
+# Client setup
 
 DB_PATH = Path(__file__).parent / "chroma_store"
 
