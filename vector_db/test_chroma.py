@@ -1,8 +1,7 @@
 """
-JobPilot AI — ChromaDB regression and unit tests
-Owner: Chloe Vo
+ChromaDB regression and unit tests
 
-Covers schema validation and Chroma ops behavior, including:
+Schema validation and Chroma ops behavior, including:
 - record conversion
 - idempotent batch insert
 - similarity search with filters

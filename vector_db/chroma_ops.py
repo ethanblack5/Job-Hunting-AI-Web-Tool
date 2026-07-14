@@ -30,20 +30,8 @@ def job_listing_to_chroma_record(job, embedding: list, source: str = "remoteok")
     """
     Converts a job into the record shape add_postings_batch expects.
 
-    Accepts either:
-    - A dict shaped like the raw backend output (title, company, date_posted,
-      location, min_salary, max_salary, apply_url, job_id, tags, desc, remoteok_url)
-    - An instance of the backend's `JobListing` pydantic model directly (e.g. one
-      value from the `job_dict` returned by `get_job_postings`)
-
-    `embedding` must be supplied by the ML pipeline — this function does not compute it.
-
-    Note: the backend's `min_salary`/`max_salary` are Optional[int] — None when the
-    original posting didn't disclose a salary (RemoteOK sends 0 in that case, and the
-    backend's `process_job` converts 0 -> None). Chroma metadata can't store null
-    values, so we convert None back to 0 here on the way in.
     """
-    # Normalize: pydantic model -> dict, so the rest of this function only deals with dicts
+    
     if hasattr(job, "model_dump"):
         job = job.model_dump()
     elif hasattr(job, "dict"):
