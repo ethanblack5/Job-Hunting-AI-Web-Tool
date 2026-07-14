@@ -1,7 +1,6 @@
 """
 Vector DB insert/query functions
-Basic CRUD + similarity search wrapper around the
-job_postings ChromaDB collection.
+Similarity search
 """
 
 from typing import Optional
@@ -78,9 +77,15 @@ def add_postings_batch(collection, records: list[dict]):
     """
     ids, embeddings, documents, metadatas = [], [], [], []
     for r in records:
-        missing = [f for f in REQUIRED_METADATA_FIELDS if f not in r["metadata"]]
+        missing = [
+            f
+            for f in REQUIRED_METADATA_FIELDS
+            if f not in r["metadata"]
+        ]
         if missing:
-            raise ValueError(f"Record {r.get('source_id')} missing fields: {missing}")
+            raise ValueError(
+                f"Record {r.get('source_id')} missing fields: {missing}"
+            )
         ids.append(r["source_id"])
         embeddings.append(r["embedding"])
         documents.append(r["document"])
