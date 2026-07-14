@@ -3,7 +3,6 @@ This is meant to clean RemoteOK's messy description data from their API.
 """
 
 import html
-import json
 import re
 
 from bs4 import BeautifulSoup
