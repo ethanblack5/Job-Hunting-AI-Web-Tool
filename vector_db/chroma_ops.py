@@ -1,6 +1,7 @@
 """
 Vector DB insert/query functions
-Basic CRUD + similarity search wrapper around the job_postings ChromaDB collection.
+Basic CRUD + similarity search wrapper around the
+job_postings ChromaDB collection.
 """
 
 from typing import Optional
@@ -8,11 +9,18 @@ from typing import Optional
 from chroma_schema import REQUIRED_METADATA_FIELDS
 
 
-def add_posting(collection, source_id: str, embedding: list, document: str, metadata: dict):
+def add_posting(
+    collection,
+    source_id: str,
+    embedding: list,
+    document: str,
+    metadata: dict,
+):
     """
     Insert (or upsert) a single job posting.
-    - source_id becomes the Chroma record id (prevents duplicate postings from re-ingestion).
-    - Uses upsert semantics so re-running the ingestion pipeline is safe/idempotent.
+    - source_id becomes the Chroma record id.
+    - Uses upsert semantics so re-running the ingestion
+      pipeline is safe/idempotent.
     """
     missing = [f for f in REQUIRED_METADATA_FIELDS if f not in metadata]
     if missing:
@@ -26,12 +34,16 @@ def add_posting(collection, source_id: str, embedding: list, document: str, meta
     )
 
 
-def job_listing_to_chroma_record(job, embedding: list, source: str = "remoteok") -> dict:
+def job_listing_to_chroma_record(
+    job,
+    embedding: list,
+    source: str = "remoteok",
+) -> dict:
     """
-    Converts a job into the record shape add_postings_batch expects.
+    Convert a job into the record shape expected by
+    add_postings_batch.
 
     """
-    
     if hasattr(job, "model_dump"):
         job = job.model_dump()
     elif hasattr(job, "dict"):
@@ -61,7 +73,8 @@ def job_listing_to_chroma_record(job, embedding: list, source: str = "remoteok")
 
 def add_postings_batch(collection, records: list[dict]):
     """
-    Bulk insert. Each record must have: source_id, embedding, document, metadata.
+    Bulk insert. Each record must have:
+    source_id, embedding, document, metadata.
     """
     ids, embeddings, documents, metadatas = [], [], [], []
     for r in records:
@@ -73,7 +86,12 @@ def add_postings_batch(collection, records: list[dict]):
         documents.append(r["document"])
         metadatas.append(r["metadata"])
 
-    collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
+    collection.upsert(
+        ids=ids,
+        embeddings=embeddings,
+        documents=documents,
+        metadatas=metadatas,
+    )
 
 
 def similarity_search(
@@ -84,8 +102,10 @@ def similarity_search(
     source: Optional[str] = None,
 ):
     """
-    Run a similarity search against the collection, with optional metadata filters.
-    query_embedding must come from the same embedding model used at insert time.
+    Run a similarity search against the collection, with
+    optional metadata filters.
+    query_embedding must come from the same embedding model
+    used at insert time.
     """
     where = {}
     if location:
@@ -110,3 +130,4 @@ def delete_posting(collection, source_id: str):
 
 def count(collection) -> int:
     return collection.count()
+
