@@ -25,6 +25,7 @@ class JobListing(BaseModel):
     desc: str
     remoteok_url: str
 
+
 @app.get("/job-batch/")
 def get_job_postings(query_tags: str, position: str, date: str):
     """
@@ -72,7 +73,8 @@ def process_job(job: JobListing) -> JobListing:
     # standardize to only include YYYY-MM-DD format
     job.date_posted = job.date_posted[0:10]
 
-    # standardize job location to only include relevant parts without extraneous characters
+    # standardize job location to only include relevant parts
+    # without extraneous trailing characters
     for index, char in enumerate(job.location):
         if char == ',' and index + 2 == len(job.location):
             stop_index = index
