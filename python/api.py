@@ -78,9 +78,8 @@ def process_job(job: JobListing) -> JobListing:
     for index, char in enumerate(job.location):
         if char == ',' and index + 2 == len(job.location):
             stop_index = index
+            job.location = job.location[0:stop_index + 1]
             break
-
-    job.location = job.location[0:stop_index + 1]
 
     if job.min_salary == 0:
         job.min_salary = None
