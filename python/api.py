@@ -1,12 +1,17 @@
 import requests
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Optional
-# pip install requests fastapi[standard] pydantic typing
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from api_description_cleaning import clean_description
+from api_salary_extraction import extract_salary_bounds
+import re
+# pip install requests fastapi[standard] pydantic
 
 app = FastAPI()
-url = "https://remoteok.com/api"
-titles = []
+url = "https://www.remoteok.com/api"
+
+headers = {
+    "User-Agent": "Job-Hunting-AI-Web-Tool/1.0"
+}
 
 
 class JobListing(BaseModel):
@@ -17,24 +22,27 @@ class JobListing(BaseModel):
     company: str
     date_posted: str
     location: str
-    min_salary: Optional[int]
-    max_salary: Optional[int]
+
+    min_salary: str | None = None
+    max_salary: str | None = None
+    cleaned_salary: str | None = None
+
     apply_url: str
     job_id: str
-    tags: list
+    tags: list[str] = Field(default_factory=list)
     desc: str
     remoteok_url: str
 
 
-@app.get("/job-batch/")
-def get_job_postings(query_tags: str, position: str, date: str):
+@app.get("/job-batch/", response_model=list[JobListing])
+def get_job_postings(query_tags: str = "", position: str = "", date: str = ""):
     """
     API returns json keys 'slug', 'id', 'epoch', 'date', 'company',
     'company_logo', 'position', 'tags', 'description', 'location',
     'apply_url', 'salary_min', 'salary_max', 'logo', and 'url' per job posting
     """
 
-    job_dict = {}
+    jobs: list[JobListing] = []
 
     search_params = {
         "tags": query_tags,
@@ -42,27 +50,74 @@ def get_job_postings(query_tags: str, position: str, date: str):
         "date": date
     }
 
-    response = requests.get(url, params=search_params)
-    job_json = response.json()
+    try:
+        response = requests.get(url, params=search_params, headers=headers, timeout=10)
+        response.raise_for_status()
+        job_json = response.json()
 
-    for index, job in enumerate(job_json):
+        if not isinstance(job_json, list):
+            raise HTTPException(
+                status_code=502,
+                detail="Unexpected response format."
+            )
 
-        new_job = JobListing(title=job["position"],
-                             company=job["company"],
-                             date_posted=job["date"],
-                             location=job["location"],
-                             min_salary=job["salary_min"],
-                             max_salary=job["salary_max"],
-                             apply_url=job["apply_url"],
-                             job_id=job["id"],
-                             tags=job["tags"],
-                             desc=job["description"],
-                             remoteok_url=job["url"])
+    except requests.exceptions.Timeout as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="RemoteOK request timed out."
+        ) from exc
+
+    except requests.exceptions.RequestException as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Remote OK request failed: {exc}",
+        ) from exc
+
+    except requests.exceptions.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Remote OK returned invalid JSON.",
+        ) from exc
+
+    for job in job_json:
+        if not isinstance(job, dict):
+            continue
+
+        if not job.get("id") or not job.get("position"):
+            continue
+
+        new_job = JobListing(
+                            title=job.get("position", ""),
+                            company=job.get("company", ""),
+                            date_posted=job.get("date", ""),
+                            location=job.get("location", ""),
+                            min_salary=str(job.get("salary_min", "")),
+                            max_salary=str(job.get("salary_max", "")),
+                            cleaned_salary=None,
+                            apply_url=job.get("apply_url", ""),
+                            job_id=str(job.get("id", "")),
+                            tags=job.get("tags", []),
+                            desc=job.get("description", ""),
+                            remoteok_url=job.get("url", "")
+                            )
+
         processed_job = process_job(new_job)
-        dict_var = f"job_{index}"
-        job_dict[dict_var] = processed_job
+        jobs.append(processed_job)
 
-    return job_dict
+    return jobs
+
+
+def combine_salary_bounds(
+    minimum: str | None,
+    maximum: str | None,
+) -> str | None:
+    if minimum is None:
+        return None
+
+    if maximum is None or minimum == maximum:
+        return minimum
+
+    return f"{minimum} - {maximum}"
 
 
 def process_job(job: JobListing) -> JobListing:
@@ -71,25 +126,29 @@ def process_job(job: JobListing) -> JobListing:
     """
 
     # standardize to only include YYYY-MM-DD format
-    job.date_posted = job.date_posted[0:10]
+    job.date_posted = job.date_posted[:10]
 
     # standardize job location to only include relevant parts
     # without extraneous trailing characters
-    for index, char in enumerate(job.location):
-        if char == ',' and index + 2 == len(job.location):
-            stop_index = index
-            break
+    job.location = re.sub(r"\s+", " ", job.location).strip(" ,")
 
-    job.location = job.location[0:stop_index + 1]
+    job.tags = sorted({
+        str(tag).strip().casefold()
+        for tag in job.tags
+        if str(tag).strip()
+    })
 
-    if job.min_salary == 0:
-        job.min_salary = None
+    job.desc = clean_description(job.desc)
 
-    if job.max_salary == 0:
-        job.max_salary = None
+    if job.min_salary == "0" and job.max_salary == "0":
+        job.min_salary, job.max_salary = extract_salary_bounds(job.desc)
+        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
+    else:
+        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
 
     return job
 
 
-if __name__ == "__main__":
-    get_job_postings("Accountant", "Accountant", "2026-07-12")
+@app.post("/api/jobs")
+def post_jobs(jobs: list[JobListing]):
+    return {"status": "Success", "count_jobs": len(jobs), "received_jobs": jobs}
