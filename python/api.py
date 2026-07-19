@@ -2,6 +2,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from api_description_cleaning import clean_description
+from api_salary_extraction import extract_salary_bounds
 import re
 # pip install requests fastapi[standard] pydantic
 
@@ -21,8 +22,11 @@ class JobListing(BaseModel):
     company: str
     date_posted: str
     location: str
-    min_salary: int
-    max_salary: int
+
+    min_salary: str | None = None
+    max_salary: str | None = None
+    cleaned_salary: str | None = None
+    
     apply_url: str
     job_id: str
     tags: list[str] = Field(default_factory=list)
@@ -31,7 +35,7 @@ class JobListing(BaseModel):
 
 
 @app.get("/job-batch/", response_model=list[JobListing])
-def get_job_postings(query_tags: str, position: str, date: str):
+def get_job_postings(query_tags: str = "", position: str = "", date: str = ""):
     """
     API returns json keys 'slug', 'id', 'epoch', 'date', 'company',
     'company_logo', 'position', 'tags', 'description', 'location',
@@ -87,8 +91,9 @@ def get_job_postings(query_tags: str, position: str, date: str):
                             company=job.get("company", ""),
                             date_posted=job.get("date", ""),
                             location=job.get("location", ""),
-                            min_salary=job.get("salary_min", ""),
-                            max_salary=job.get("salary_max", ""),
+                            min_salary=str(job.get("salary_min", "")),
+                            max_salary=str(job.get("salary_max", "")),
+                            cleaned_salary = None,
                             apply_url=job.get("apply_url", ""),
                             job_id=str(job.get("id", "")),
                             tags=job.get("tags", []),
@@ -100,6 +105,18 @@ def get_job_postings(query_tags: str, position: str, date: str):
         jobs.append(processed_job)
 
     return jobs
+
+def combine_salary_bounds(
+    minimum: str | None,
+    maximum: str | None,
+) -> str | None:
+    if minimum is None:
+        return None
+
+    if maximum is None or minimum == maximum:
+        return minimum
+
+    return f"{minimum} - {maximum}"
 
 
 def process_job(job: JobListing) -> JobListing:
@@ -120,13 +137,13 @@ def process_job(job: JobListing) -> JobListing:
         if str(tag).strip()
     })
 
-    if job.min_salary == 0:
-        job.min_salary = None
-
-    if job.max_salary == 0:
-        job.max_salary = None
-
     job.desc = clean_description(job.desc)
+
+    if job.min_salary == "0" and job.max_salary == "0":
+        job.min_salary, job.max_salary = extract_salary_bounds(job.desc)
+        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
+    else:
+        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
 
     return job
 
