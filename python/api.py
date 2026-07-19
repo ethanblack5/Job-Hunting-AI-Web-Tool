@@ -12,6 +12,7 @@ headers = {
     "User-Agent": "Job-Hunting-AI-Web-Tool/1.0"
 }
 
+
 class JobListing(BaseModel):
     """
     Job object used per listing from RemoteOK API data
@@ -61,7 +62,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
             status_code=504,
             detail="RemoteOK request timed out."
         ) from exc
-    
+
     except requests.exceptions.RequestException as exc:
         raise HTTPException(
             status_code=502,
@@ -73,7 +74,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
             status_code=502,
             detail="Remote OK returned invalid JSON.",
         ) from exc
-    
+
 
     for job in job_json:
         if not isinstance(job, dict):
@@ -84,18 +85,18 @@ def get_job_postings(query_tags: str, position: str, date: str):
 
         new_job = JobListing(
                             title=job.get("position", ""),
-                             company=job.get("company", ""),
-                             date_posted=job.get("date", ""),
-                             location=job.get("location", ""),
-                             min_salary=job.get("salary_min", ""),
-                             max_salary=job.get("salary_max", ""),
-                             apply_url=job.get("apply_url", ""),
-                             job_id=str(job.get("id", "")),
-                             tags=job.get("tags", []),
-                             desc=job.get("description", ""),
-                             remoteok_url=job.get("url", "")
-                             )
-        
+                            company=job.get("company", ""),
+                            date_posted=job.get("date", ""),
+                            location=job.get("location", ""),
+                            min_salary=job.get("salary_min", ""),
+                            max_salary=job.get("salary_max", ""),
+                            apply_url=job.get("apply_url", ""),
+                            job_id=str(job.get("id", "")),
+                            tags=job.get("tags", []),
+                            desc=job.get("description", ""),
+                            remoteok_url=job.get("url", "")
+                            )
+
         processed_job = process_job(new_job)
         jobs.append(processed_job)
 
@@ -129,6 +130,7 @@ def process_job(job: JobListing) -> JobListing:
     job.desc = clean_description(job.desc)
 
     return job
+
 
 @app.post("/api/jobs")
 def post_jobs(jobs: list[JobListing]):
