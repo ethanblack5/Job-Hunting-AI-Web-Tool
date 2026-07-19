@@ -26,7 +26,7 @@ class JobListing(BaseModel):
     min_salary: str | None = None
     max_salary: str | None = None
     cleaned_salary: str | None = None
-    
+ 
     apply_url: str
     job_id: str
     tags: list[str] = Field(default_factory=list)
@@ -93,7 +93,7 @@ def get_job_postings(query_tags: str = "", position: str = "", date: str = ""):
                             location=job.get("location", ""),
                             min_salary=str(job.get("salary_min", "")),
                             max_salary=str(job.get("salary_max", "")),
-                            cleaned_salary = None,
+                            cleaned_salary=None,
                             apply_url=job.get("apply_url", ""),
                             job_id=str(job.get("id", "")),
                             tags=job.get("tags", []),
@@ -105,6 +105,7 @@ def get_job_postings(query_tags: str = "", position: str = "", date: str = ""):
         jobs.append(processed_job)
 
     return jobs
+
 
 def combine_salary_bounds(
     minimum: str | None,

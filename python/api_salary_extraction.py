@@ -109,6 +109,7 @@ SINGLE_PATTERN = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
+
 def normalize_amount(
     amount_text: str,
     suffix: str | None,
@@ -166,6 +167,7 @@ def is_plausible_salary(
         return False
 
     return True
+
 
 def extract_salary_bounds(
     description: str,
