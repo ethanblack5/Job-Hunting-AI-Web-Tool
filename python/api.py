@@ -1,13 +1,12 @@
 import requests
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
 from api_description_cleaning import clean_description
-# pip install requests fastapi[standard] pydantic typing
+import re
+# pip install requests fastapi[standard] pydantic
 
 app = FastAPI()
 url = "https://www.remoteok.com/api"
-titles = []
 
 headers = {
     "User-Agent": "Job-Hunting-AI-Web-Tool/1.0"
@@ -21,16 +20,16 @@ class JobListing(BaseModel):
     company: str
     date_posted: str
     location: str
-    min_salary: Optional[int]
-    max_salary: Optional[int]
+    min_salary: int
+    max_salary: int
     apply_url: str
     job_id: str
-    tags: list
+    tags: list[str] = Field(default_factory=list)
     desc: str
     remoteok_url: str
 
 
-@app.get("/job-batch/")
+@app.get("/job-batch/", response_model=list[JobListing])
 def get_job_postings(query_tags: str, position: str, date: str):
     """
     API returns json keys 'slug', 'id', 'epoch', 'date', 'company',
@@ -38,7 +37,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
     'apply_url', 'salary_min', 'salary_max', 'logo', and 'url' per job posting
     """
 
-    jobs = []
+    jobs: list[JobListing] = []
 
     search_params = {
         "tags": query_tags,
@@ -50,6 +49,12 @@ def get_job_postings(query_tags: str, position: str, date: str):
         response = requests.get(url, params=search_params, headers=headers, timeout=10)
         response.raise_for_status()
         job_json = response.json()
+
+        if not isinstance(job_json, list):
+            raise HTTPException(
+                status_code=502,
+                detail="Unexpected response format."
+            )
 
     except requests.exceptions.Timeout as exc:
         raise HTTPException(
@@ -71,6 +76,11 @@ def get_job_postings(query_tags: str, position: str, date: str):
     
 
     for job in job_json:
+        if not isinstance(job, dict):
+            continue
+
+        if not job.get("id") or not job.get("position"):
+            continue
 
         new_job = JobListing(
                             title=job.get("position", ""),
@@ -80,7 +90,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
                              min_salary=job.get("salary_min", ""),
                              max_salary=job.get("salary_max", ""),
                              apply_url=job.get("apply_url", ""),
-                             job_id=job.get("id", ""),
+                             job_id=str(job.get("id", "")),
                              tags=job.get("tags", []),
                              desc=job.get("description", ""),
                              remoteok_url=job.get("url", "")
@@ -102,11 +112,13 @@ def process_job(job: JobListing) -> JobListing:
 
     # standardize job location to only include relevant parts
     # without extraneous trailing characters
-    for index, char in enumerate(job.location):
-        if char == ',' and index + 2 == len(job.location):
-            stop_index = index
-            job.location = job.location[:stop_index + 1]
-            break
+    job.location = re.sub(r"\s+", " ", job.location).strip(" ,")
+
+    job.tags = sorted({
+        str(tag).strip().casefold()
+        for tag in job.tags
+        if str(tag).strip()
+    })
 
     if job.min_salary == 0:
         job.min_salary = None
@@ -119,5 +131,5 @@ def process_job(job: JobListing) -> JobListing:
     return job
 
 @app.post("/api/jobs")
-def post_jobs(jobs: JobListing):
-    return {"status": "Success", "received_jobs": jobs}
+def post_jobs(jobs: list[JobListing]):
+    return {"status": "Success", "count_jobs": len(jobs), "received_jobs": jobs}
