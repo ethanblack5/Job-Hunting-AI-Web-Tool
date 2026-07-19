@@ -75,7 +75,6 @@ def get_job_postings(query_tags: str, position: str, date: str):
             detail="Remote OK returned invalid JSON.",
         ) from exc
 
-
     for job in job_json:
         if not isinstance(job, dict):
             continue
