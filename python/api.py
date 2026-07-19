@@ -26,7 +26,7 @@ class JobListing(BaseModel):
     min_salary: str | None = None
     max_salary: str | None = None
     cleaned_salary: str | None = None
- 
+
     apply_url: str
     job_id: str
     tags: list[str] = Field(default_factory=list)
