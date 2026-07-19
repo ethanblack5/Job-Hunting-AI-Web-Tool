@@ -5,9 +5,12 @@ from typing import Optional
 # pip install requests fastapi[standard] pydantic typing
 
 app = FastAPI()
-url = "https://remoteok.com/api"
+url = "https://www.remoteok.com/api"
 titles = []
 
+headers = {
+    "User-Agent": "Job-Hunting-AI-Web-Tool/1.0"
+}
 
 class JobListing(BaseModel):
     """
@@ -42,7 +45,7 @@ def get_job_postings(query_tags: str, position: str, date: str):
         "date": date
     }
 
-    response = requests.get(url, params=search_params)
+    response = requests.get(url, params=search_params, headers=headers, timeout=10)
     job_json = response.json()
 
     for index, job in enumerate(job_json):
@@ -88,6 +91,10 @@ def process_job(job: JobListing) -> JobListing:
         job.max_salary = None
 
     return job
+
+@app.get("/api/posts")
+def get_jobs():
+    return
 
 
 if __name__ == "__main__":
