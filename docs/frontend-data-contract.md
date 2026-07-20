@@ -2,8 +2,8 @@
 
 **Job Hunting AI Web Tool | CS 467 Summer 2026**
 **Owner:** Brian Merritt (frontend)
-**Status:** Draft for review by Ethan (backend endpoint), Jawwad (analytics payload), and Chloe (retrieval layer / score format)
-**Last updated:** 7/17/2026
+**Status:** In use. Core shapes agreed with Ethan (backend), Chloe (retrieval layer), and Jawwad (analytics payload). Remaining open items are listed in section 8.
+**Last updated:** 7/19/2026
 
 This document defines the request the React frontend sends to the FastAPI backend and the response shape the UI requires. Every field the UI renders is listed here. If a field is renamed, removed, or changes type, the frontend breaks, so changes should be agreed before implementation.
 
@@ -22,7 +22,7 @@ POST /api/search
 Content-Type: application/json
 ```
 
-**[P1]** Open question (for Ethan): confirm the path and whether search is POST with a JSON body or GET with query params. POST is assumed here because `skills` is a list and the payload is not URL-friendly.
+Search is a POST with a JSON body rather than a GET with query params, because `skills` is a list and the payload is not URL-friendly.
 
 **[P3]** Open question (for Ethan): when a search triggers the staleness check and the index is found stale, does this endpoint block until re-ingestion and re-embedding finish, or does it return current (possibly stale) results immediately while refresh happens in the background? This affects whether the frontend needs a long-wait loading state and whether the "fast response time" non-functional requirement is achievable on a stale hit.
 
@@ -47,14 +47,18 @@ Sent by the search form on the home page.
 | `job_title` | string | yes | Free text from the Job Title / Keywords input. May be empty string if the user only enters skills. |
 | `skills` | string[] | no | Tag input. Empty array if none entered. |
 | `location` | string | no | Free text. Defaults to `"remote"` if left blank. |
-| `experience_level` | string | no | One of `"entry"`, `"mid"`, `"senior"`, or `""`. Proposed enum, open to change. |
+| `experience_level` | string | no | One of `"internship"`, `"entry"`, `"mid"`, `"senior"`, `"lead"`, `"staff"`, `"principal"`, or `""`. |
 | `top_n` | integer | no | Number of results requested. Frontend defaults to 20 if omitted. |
 
 **[P3]** Open question (for Ethan): should the backend enforce a max on `top_n`, and what happens if all fields are empty? Proposal is a 400 with a readable error message rather than returning everything.
 
-**[P1]** Open question (for Ethan / Jawwad): since RemoteOK is remote-only, what does `location` actually do? Options: it filters/boosts display for a preferred city, it gets folded into the semantic query text, or it's currently decorative and doesn't affect matching. This needs an answer or the field is ambiguous.
+`location` is the company's HQ location, not a remote-eligibility field, since RemoteOK postings are remote regardless. It is folded into the semantic query text rather than used as a hard filter.
 
-**[P1]** Open question (for Ethan / Brian): final `experience_level` values. Does the list need a tier beyond entry/mid/senior (for example "lead" or "staff")? Is "internship" separate from "entry"? What does an empty value mean, no preference, or should it be omitted from the request entirely? Are these the exact strings stored in the backend, or does the frontend send a human-readable label that gets translated?
+**[Open, for Ethan / Brian]** Because a user searching "remote, Austin" is matching against company HQ rather than where they can actually work, it is worth deciding whether this field earns a place as a search input, or whether it should be relabeled so it does not imply something it cannot deliver.
+
+The frontend sends the `experience_level` strings above exactly as listed, with no translation layer, and the dropdown orders them lowest to highest experience so internship appears first.
+
+**[Open, for Ethan]** Whether an empty `experience_level` should be sent as `""` meaning "no preference," or omitted from the request entirely.
 
 ---
 
@@ -123,15 +127,21 @@ One per job card. Field names map directly to the card layout in the UI/UX spec 
 | `skills` | string[] | no | Skill tags. Empty array is fine. |
 | `apply_url` | string | no | Apply link |
 
-**[P1]** Open question (for Ethan / Chloe): does `id` map directly to RemoteOK's own posting ID, and does it stay stable across re-fetches? This matters because Chloe's upsert logic depends on stable IDs to avoid duplicates, and the frontend depends on the same stability for React keys — if IDs shift on refresh, cards can duplicate or lose position.
+`id` must be unique and must persist across re-fetches. Chloe's upsert logic depends on it to update a posting in place rather than duplicate it, and the frontend depends on the same stability for React keys.
 
-**[P1]** Open question (for Ethan): is `role_type` a fixed enum (for example `"full-time" | "part-time" | "contract"`), or is it free text passed through from whatever RemoteOK provides? If it's an enum, the exact allowed values need to be agreed so the frontend's badge rendering doesn't silently fail on an unexpected value.
+**[Open, for Ethan]** What the ID is built from. Ethan proposed the last segment of the RemoteOK URL path, which combines the numeric ID with the position and company name. That slug changes if an employer edits the job title, which breaks persistence and creates duplicates. Counter-proposal: RemoteOK's raw `id` with a source prefix, e.g. `remoteok-1049283`, which stays stable across re-fetches and will not collide once a second data source is added. Either way, RemoteOK's `id` needs confirming as genuinely unique.
 
-**[P1]** Open question (for Ethan): does ingestion format `salary` into a display string like `"$150,000 - $185,000"`, or does it pass raw numeric min/max and the frontend formats it? Also unresolved: whether hourly vs. annual pay is distinguished, and how currency is handled if postings aren't all USD.
+RemoteOK does not provide `role_type` as a structured field. It appears only inconsistently inside free-text descriptions, so it will be null for most postings.
+
+**[Open, for Ethan / Brian]** Whether to build a parser that extracts role type from description text, or to accept it as usually-null and hide the badge when absent. Leaning toward the latter, since the extraction effort is hard to justify for a single badge.
+
+`salary` arrives as a formatted display string built by ingestion, e.g. `"$120,000 - $150,000"`, rather than raw numeric min/max. The frontend renders it as-is and does no formatting.
+
+**[Open, for Ethan]** Whether hourly and annual pay are distinguished in that string, and how currency is handled if postings are not all USD.
 
 **[P3]** Open question (for Ethan): is there a max length on `description`? RemoteOK descriptions can be long. Unclear whether ingestion truncates before storage or the frontend truncates for card display.
 
-**[P1]** Note on nullability (for Ethan): RemoteOK postings are inconsistent, so salary, role type, and company are frequently missing. The frontend handles nulls, but it needs `null` rather than an empty string or the string `"None"` so the conditional rendering works.
+Missing fields arrive as real JSON `null`. Python `None` serializes to `null` automatically through FastAPI and Pydantic, so no extra handling is needed on either side, and the frontend's conditional rendering can rely on it directly. Worth one sanity check against a live endpoint to confirm the response body shows `null` rather than the string `"None"`.
 
 **[P2]** Note on `date_listed` (for Ethan): the Recent sort option in the UI/UX spec sorts by this field. If it is null for a meaningful share of postings, that sort degrades. Worth confirming what percentage of RemoteOK postings actually carry a usable date.
 
@@ -159,7 +169,7 @@ For Jawwad. Drives the skill-frequency bar chart with hover interaction.
 
 Open questions for Jawwad:
 - **[P2]** How many entries should be returned? Proposal is top 10, computed server side, so the chart does not need to truncate.
-- **[P2]** Are skill names normalized (for example "JS" and "JavaScript" collapsed)? Inconsistent naming is a known risk in the project plan and it shows up directly in this chart.
+- **[P2]** Are skill names normalized (for example "JS" and "JavaScript" collapsed)? Inconsistent naming is a known risk in the project plan and it shows up directly in this chart. Partial answer from Ethan's ingestion PR (#39): `process_job` already lowercases, trims, and dedupes tags. That handles casing and duplicates but not synonyms, so the collapsing question is still open.
 - **[P2]** Should this be computed over the returned `top_n` results only, or over a wider match set?
 
 ---
@@ -168,9 +178,9 @@ Open questions for Jawwad:
 
 The score ring and the match score guide both depend on this.
 
-Proposal: `score` is a float from 0.0 to 1.0 where higher is a better match, and the frontend renders it as a percentage.
+`score` is a similarity from 0.0 to 1.0 where higher is a better match. The frontend multiplies by 100 to render the percentage in the score ring.
 
-**[P1]** This needs confirmation (owner: Chloe) because ChromaDB returns a **distance**, not a similarity, and for cosine distance lower is better. Whoever converts distance to similarity should do it once, server side, so the frontend never has to guess which direction the number runs. Proposal is that Chloe's retrieval layer does the conversion and returns a similarity.
+ChromaDB returns a distance by default, where lower is better. The retrieval layer converts distance to similarity before the value leaves the backend, so the frontend never has to reason about which direction the number runs.
 
 **[P2]** Second open question (for Jawwad): score buckets for the match score guide. The frontend needs the thresholds that separate strong, moderate, and weak matches. These should not be invented in the frontend. Proposal is that Jawwad sets them from evaluation work and they are documented here once known.
 
@@ -200,31 +210,27 @@ Proposal for the partial-failure case: return results as normal but include `"in
 
 ## 8. Open items summary
 
-Sorted by priority. See the priority key at the top of this document.
+Sorted by priority. See the priority key at the top of this document. Settled decisions are written into the sections above rather than tracked here.
 
 | Priority | Item | Owner | Status |
 |---|---|---|---|
-| P1 | Score direction (similarity vs distance) | Chloe | Open |
-| P1 | Endpoint path and method | Ethan | Open |
-| P1 | `experience_level` enum values | Ethan / Brian | Proposed |
-| P1 | `location` semantics (filter, boost, query text, or decorative) | Ethan / Jawwad | Open |
-| P1 | `role_type` enum vs. free text | Ethan | Open |
-| P1 | Salary formatting (string vs. raw numbers, currency, hourly/annual) | Ethan | Open |
-| P1 | `id` source and stability across re-fetches | Ethan / Chloe | Open |
-| P1 | Null handling for salary / company / role_type | Ethan | Proposed |
+| P1 | `id` format (raw ID + source prefix vs. URL slug) | Ethan | Open |
+| P1 | Is `location` worth surfacing as a search input | Ethan / Brian | Open |
+| P1 | `role_type`: parse from description or accept as usually-null | Ethan / Brian | Open |
+| P1 | Salary string: hourly vs. annual, non-USD currency | Ethan | Open |
+| P1 | Empty `experience_level`: send `""` or omit | Ethan | Open |
 | P2 | `match_count` definition (total matches vs. returned count) | Ethan | Open |
 | P2 | Sort toggle: client-side re-sort vs. new request | Ethan / Brian | Open |
 | P2 | `date_listed` coverage (share of postings with usable dates) | Ethan | Open |
 | P2 | Score bucket thresholds for the guide | Jawwad | Open |
 | P2 | Score precision and rounding | Chloe / Jawwad | Proposed (4 decimals, frontend rounds to whole %) |
-| P2 | Skill name normalization | Jawwad | Open |
+| P2 | Skill synonym collapsing (casing/dupes already handled at ingestion) | Jawwad | Open |
 | P2 | Number of skills in chart payload | Jawwad | Proposed (top 10) |
 | P2 | Analytics scope (top_n results vs. wider match set) | Jawwad | Open |
+| P2 | Field naming: `date_listed` vs. `date_posted` | Ethan / Brian | Open |
 | P3 | Blocking vs. background refresh on stale index | Ethan | Open |
 | P3 | `top_n` max cap and empty-criteria behavior | Ethan | Proposed (400 error) |
 | P3 | `description` max length and truncation owner | Ethan | Open |
 | P3 | Error response shape | Ethan | Proposed |
 
-**Count by priority:** P1 = 8, P2 = 8, P3 = 4.
-
-**Count by owner** (joint items counted for each person): Ethan = 16, Chloe = 4, Jawwad = 7, Brian = 2.
+None of the remaining P1 items block frontend work. Each is a refinement to a decision that is already made.
