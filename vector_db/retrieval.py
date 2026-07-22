@@ -61,6 +61,7 @@ def embed_query(raw_query: str) -> list:
     query = preprocess_query(raw_query)
     return get_model().encode(query).tolist()
 
+
 def retrieve(
     collection,
     raw_query: str,
