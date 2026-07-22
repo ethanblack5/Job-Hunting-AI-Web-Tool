@@ -1,109 +1,123 @@
 import { useState } from 'react';
+import { MOCK_RESPONSE } from '../mock/mockResponse';
 
-function SearchForm({ setResults }) {
-  const [formData, setFormData] = useState({
-    jobTitle: '',
-    skills: '',
-    location: '',
-    experienceLevel: ''
-  });
+function SearchForm({ setSearchResponse }) {
+  const [jobTitle, setJobTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
+  const [skills, setSkills] = useState([]);
+  const [skillInput, setSkillInput] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const addSkill = () => {
+    const trimmed = skillInput.trim();
+    if (trimmed && !skills.includes(trimmed)) {
+      setSkills([...skills, trimmed]);
+    }
+    setSkillInput('');
+  };
+
+  const handleSkillKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addSkill();
+    }
+  };
+
+  const removeSkill = (skill) => {
+    setSkills(skills.filter((s) => s !== skill));
   };
 
   const handleSubmit = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const mockResults = [
-    {
-      id: 1,
-      title: 'Senior Python Developer',
-      company: 'Acme Corp',
-      location: 'Remote',
-      salary: '$120,000 - $150,000',
-      type: 'Full-time',
-      date: '2 days ago',
-      description: 'We are looking for an experienced Python developer...',
-      skills: ['Python', 'FastAPI', 'PostgreSQL'],
-      link: 'https://remoteok.com',
-      score: 0.92
-    },
-    {
-      id: 2,
-      title: 'Machine Learning Engineer',
-      company: 'Tech Startup',
-      location: 'Remote',
-      salary: '$130,000 - $160,000',
-      type: 'Full-time',
-      date: '1 day ago',
-      description: 'Join our ML team to build cutting edge models...',
-      skills: ['Python', 'TensorFlow', 'AWS'],
-      link: 'https://remoteok.com',
-      score: 0.87
-    },
-    {
-      id: 3,
-      title: 'Backend API Developer',
-      company: 'Remote First Inc',
-      location: 'Remote',
-      salary: '$100,000 - $130,000',
-      type: 'Contract',
-      date: '3 days ago',
-      description: 'Build and maintain RESTful APIs for our platform...',
-      skills: ['Python', 'Django', 'Docker'],
-      link: 'https://remoteok.com',
-      score: 0.81
-    }
-  ];
+    // Request shape per docs/frontend-data-contract.md
+    const request = {
+      job_title: jobTitle,
+      skills,
+      location: location || 'remote',
+      experience_level: experienceLevel,
+      top_n: 20,
+    };
 
-  setResults(mockResults);
-};
+    // TODO(PR2): replace with fetch('/api/search', { method: 'POST', ... })
+    // once Ethan's endpoint is live. Mock response matches the contract shape.
+    console.log('POST /api/search', request);
+    setSearchResponse(MOCK_RESPONSE);
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="search-form" onSubmit={handleSubmit}>
       <h2>Find Your Next Remote Job</h2>
 
-      <label>Job Title</label>
+      <label htmlFor="jobTitle">Job Title / Keywords</label>
       <input
+        id="jobTitle"
         type="text"
-        name="jobTitle"
-        value={formData.jobTitle}
-        onChange={handleChange}
+        value={jobTitle}
+        onChange={(e) => setJobTitle(e.target.value)}
         placeholder="e.g. Software Engineer"
       />
 
-      <label>Skills</label>
-      <input
-        type="text"
-        name="skills"
-        value={formData.skills}
-        onChange={handleChange}
-        placeholder="e.g. Python, React, Machine Learning"
-      />
+      <label htmlFor="skillInput">Skills</label>
+      <div className="skill-input-row">
+        <input
+          id="skillInput"
+          type="text"
+          value={skillInput}
+          onChange={(e) => setSkillInput(e.target.value)}
+          onKeyDown={handleSkillKeyDown}
+          placeholder="Type a skill, press Enter to add"
+        />
+        <button type="button" className="btn-secondary" onClick={addSkill}>
+          Add
+        </button>
+      </div>
+      {skills.length > 0 && (
+        <div className="skill-tags" aria-label="Selected skills">
+          {skills.map((skill) => (
+            <span key={skill} className="skill-tag">
+              {skill}
+              <button
+                type="button"
+                className="skill-tag-remove"
+                onClick={() => removeSkill(skill)}
+                aria-label={`Remove ${skill}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
-      <label>Location Preference</label>
+      <label htmlFor="location">Location Preference</label>
       <input
+        id="location"
         type="text"
-        name="location"
-        value={formData.location}
-        onChange={handleChange}
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
         placeholder="e.g. United States"
       />
 
-      <label>Experience Level</label>
+      <label htmlFor="experienceLevel">Experience Level</label>
       <select
-        name="experienceLevel"
-        value={formData.experienceLevel}
-        onChange={handleChange}
+        id="experienceLevel"
+        value={experienceLevel}
+        onChange={(e) => setExperienceLevel(e.target.value)}
       >
-        <option value="">Select...</option>
+        <option value="">No preference</option>
+        <option value="internship">Internship</option>
         <option value="entry">Entry Level</option>
         <option value="mid">Mid Level</option>
         <option value="senior">Senior Level</option>
+        <option value="lead">Lead</option>
+        <option value="staff">Staff</option>
+        <option value="principal">Principal</option>
       </select>
 
-      <button type="submit">Search Jobs</button>
+      <button type="submit" className="btn-primary">
+        Search Jobs
+      </button>
     </form>
   );
 }

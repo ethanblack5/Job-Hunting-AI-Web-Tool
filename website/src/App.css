@@ -1,38 +1,741 @@
+/* Dark "Job Hunter" theme per Chloe's mockups: near-black navy surfaces,
+   amber-yellow accent, Anton display headlines, JetBrains Mono UI labels. */
+
+:root {
+  --bg: #0a0d14;
+  --surface: #10151f;
+  --surface-2: #151b28;
+  --line: #232b3d;
+  --ink: #e8ebf2;
+  --ink-soft: #8b94a7;
+  --accent: #eeb63a;
+  --accent-soft: rgba(238, 182, 58, 0.12);
+  --accent-ink: #131108;
+  --strong: #79d789;
+  --good: #eeb63a;
+  --partial: #e08c3c;
+  --weak: #c05b4d;
+  --purple: #a985f5;
+  --font-display: 'Anton', 'Archivo', sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
 .App {
-  text-align: center;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+/* ---------- Home ---------- */
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.home-page {
+  position: relative;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 32px 96px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  text-align: left;
+  overflow: hidden;
+}
+
+/* Soft amber glow behind the headline, keeps the dark field from reading flat. */
+.home-page::before {
+  content: '';
+  position: absolute;
+  top: -14%;
+  left: -12%;
+  width: 620px;
+  height: 620px;
+  background: radial-gradient(
+    circle,
+    rgba(238, 182, 58, 0.09) 0%,
+    rgba(238, 182, 58, 0) 68%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Brand header */
+
+.home-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 64px;
+}
+
+.home-brand-mark {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.home-brand-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+/* Two-column body */
+
+.home-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 500px);
+  column-gap: 88px;
+  align-items: center;
+}
+
+.home-copy,
+.home-form-col {
+  min-width: 0;
+}
+
+.home-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 24px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.home-eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.home-headline {
+  margin: 0 0 24px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2.4rem, 4.6vw, 3.9rem);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: #ffffff;
+}
+
+.home-h1-accent {
+  color: var(--accent);
+}
+
+.home-tagline {
+  margin: 0 0 40px;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  max-width: 46ch;
+}
+
+/* How-it-works steps */
+
+.home-steps {
+  list-style: none;
+  margin: 0;
+  padding: 28px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 52ch;
+}
+
+.home-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.home-step-n {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  padding-top: 3px;
+}
+
+.home-step-text {
+  min-width: 0;
+}
+
+.home-step-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.home-step-body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.home-footnote {
+  margin: 32px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  max-width: 52ch;
+}
+
+@media (max-width: 940px) {
+  .home-page {
+    padding: 32px 20px 72px;
+    min-height: 0;
+  }
+  .home-brand {
+    margin-bottom: 44px;
+  }
+  .home-grid {
+    grid-template-columns: 1fr;
+    row-gap: 48px;
+    align-items: start;
+  }
+  .home-page::before {
+    width: 380px;
+    height: 380px;
+  }
+  .home-tagline {
+    margin-bottom: 36px;
+  }
+}
+
+/* ---------- Search form ---------- */
+
+.search-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 32px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+}
+
+/* Hairline accent along the top edge of the form card. */
+.search-form {
+  position: relative;
+}
+
+.search-form::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(238, 182, 58, 0) 0%,
+    var(--accent) 50%,
+    rgba(238, 182, 58, 0) 100%
+  );
+}
+
+.search-form h2 {
+  margin: 0 0 16px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+}
+
+.search-form label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.search-form input,
+.search-form select {
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color-scheme: dark;
+}
+
+.search-form input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+
+.search-form input:focus,
+.search-form select:focus,
+.sort-btn:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.apply-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.skill-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.skill-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.skill-tag {
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Removable tags in the search form read as active selections — accent them. */
+.skill-tags .skill-tag {
+  color: var(--accent);
+  border-color: rgba(238, 182, 58, 0.45);
+}
+
+.skill-tag-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.8;
+}
+
+.skill-tag-remove:hover {
+  opacity: 1;
+}
+
+.btn-primary {
+  margin-top: 24px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 6px;
+  padding: 15px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.btn-primary::after {
+  content: ' →';
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  border-color: var(--ink-soft);
+}
+
+/* ---------- Results: filter bar ---------- */
+
+.results-page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 28px;
+}
+
+.filter-criteria {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.criteria-chip {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.match-count {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  margin-left: 6px;
+  order: -1;
+  margin-right: 8px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sort-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.sort-btn:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+.sort-btn.active {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+/* ---------- Results: grid ---------- */
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.results-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 800px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+  .results-sidebar {
+    position: static;
+  }
+}
+
+/* ---------- Job card ---------- */
+
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.job-card-header {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.job-card-heading {
+  min-width: 0;
+}
+
+.job-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.job-company {
+  margin: 6px 0 8px;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.role-badge {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 8px;
+  text-transform: capitalize;
+}
+
+.job-salary {
+  margin: 14px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.job-description {
+  margin: 12px 0 16px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.job-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.apply-link {
+  display: inline-block;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid rgba(238, 182, 58, 0.55);
+  border-radius: 4px;
+  padding: 8px 20px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.apply-link::after {
+  content: ' ↗';
+}
+
+.apply-link:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* ---------- Score ring ---------- */
+
+.score-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.score-ring-track {
+  stroke: var(--line);
+}
+
+.score-ring-fill {
+  stroke: var(--strong);
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.score-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.App-link {
-  color: #61dafb;
+/* ---------- Sidebar ---------- */
+
+.chart-placeholder,
+.score-guide {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.chart-placeholder h3,
+.score-guide h3 {
+  margin: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+}
+
+.chart-placeholder p {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.score-guide ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.score-guide li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.score-guide li:first-child {
+  padding-top: 0;
+}
+
+.score-guide li:last-child {
+  border-bottom: none;
+}
+
+/* Mockup carries bucket color on the range text itself — dots stay in the
+   DOM for the sibling selectors below but are not shown. */
+.bucket-dot {
+  display: none;
+}
+
+.bucket-strong { background: var(--strong); }
+.bucket-good { background: var(--good); }
+.bucket-partial { background: var(--partial); }
+.bucket-weak { background: var(--weak); }
+
+.bucket-label {
+  font-weight: 500;
+  color: var(--ink);
+  margin-left: auto;
+  order: 3;
+}
+
+.bucket-range {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  order: 2;
+}
+
+/* Range color mirrors each bucket's (hidden) dot class. */
+.bucket-strong ~ .bucket-range { color: var(--strong); }
+.bucket-good ~ .bucket-range { color: var(--good); }
+.bucket-partial ~ .bucket-range { color: var(--partial); }
+.bucket-weak ~ .bucket-range { color: var(--weak); }
+
+.score-guide-note {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ---------- Empty state ---------- */
+
+.empty-state {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 48px 40px;
+  text-align: center;
+  color: var(--ink-soft);
 }
