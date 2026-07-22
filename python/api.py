@@ -1,5 +1,5 @@
 import requests
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from api_description_cleaning import clean_description
