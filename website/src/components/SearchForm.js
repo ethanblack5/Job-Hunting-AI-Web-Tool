@@ -33,7 +33,7 @@ function SearchForm({ setSearchResponse }) {
     // Request shape per docs/frontend-data-contract.md
     const request = {
       job_title: jobTitle,
-      skills,
+      skills: skills.map((s) => s.toLowerCase()),
       location: location || 'remote',
       experience_level: experienceLevel,
       top_n: 20,
