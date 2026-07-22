@@ -48,6 +48,7 @@ class JobListing(BaseModel):
     desc: str
     remoteok_url: str
 
+
 class SearchRequest(BaseModel):
     job_title: str = ""
     skills: list[str] = Field(default_factory=list)
