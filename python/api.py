@@ -4,6 +4,11 @@ from pydantic import BaseModel
 from typing import Optional
 # pip install requests fastapi[standard] pydantic typing
 
+try:
+    from .embeddings import retrieve_jobs_from_chroma
+except ImportError:  # pragma: no cover - support running the module directly
+    from embeddings import retrieve_jobs_from_chroma
+
 app = FastAPI()
 url = "https://remoteok.com/api"
 titles = []
@@ -24,6 +29,17 @@ class JobListing(BaseModel):
     tags: list
     desc: str
     remoteok_url: str
+
+
+@app.get("/search/")
+def search_jobs(query: str, top_n: int = 5, location: Optional[str] = None):
+    """Embed a user query and return the top-ranked jobs from ChromaDB."""
+    results = retrieve_jobs_from_chroma(
+        query=query,
+        top_n=top_n,
+        location=location,
+    )
+    return {"query": query, "results": results}
 
 
 @app.get("/job-batch/")

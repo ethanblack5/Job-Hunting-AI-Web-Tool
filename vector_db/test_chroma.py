@@ -28,6 +28,7 @@ from chroma_ops import (
     similarity_search,
 )
 from chroma_schema import get_client, get_or_create_collection, REQUIRED_METADATA_FIELDS
+from chroma_logging import report_query_volume
 from sample_remoteok_jobs import RAW_SAMPLE_JOBS
 
 EMBED_DIM = 384
@@ -190,6 +191,34 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
         add_postings_batch(self.collection, records)
         self.assertEqual(count(self.collection), 3)
 
+    def test_similarity_search_logs_index_and_query_activity(self) -> None:
+        record = job_listing_to_chroma_record(
+            make_sample_job("701", title="Telemetry Analyst", desc="monitoring systems and alerts", location="Remote"),
+            embedding=fake_embedding("telemetry"),
+            source="remoteok",
+        )
+
+        with self.assertLogs("chroma_monitor", level="INFO") as captured:
+            add_posting(
+                self.collection,
+                record["source_id"],
+                record["embedding"],
+                record["document"],
+                record["metadata"],
+            )
+            similarity_search(
+                self.collection,
+                fake_embedding("alerts monitoring"),
+                n_results=1,
+                location="Remote",
+            )
+            report_query_volume()
+
+        combined_output = "\n".join(captured.output)
+        self.assertIn("Index size", combined_output)
+        self.assertIn("Query on", combined_output)
+        self.assertIn("Query volume this session", combined_output)
+
     def test_similarity_search_applies_filters(self) -> None:
         records = [
             job_listing_to_chroma_record(
@@ -229,6 +258,44 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
         )
 
         self.assertTrue(all(metadata["location"] == "Remote" for metadata in filtered_by_location["metadatas"][0]))
+
+    def test_upsert_updates_existing_record_instead_of_creating_duplicates(self) -> None:
+        original = job_listing_to_chroma_record(
+            make_sample_job("601", title="Original Title", company="Original Co", desc="original description"),
+            embedding=fake_embedding("601"),
+            source="remoteok",
+        )
+
+        add_posting(
+            self.collection,
+            original["source_id"],
+            original["embedding"],
+            original["document"],
+            original["metadata"],
+        )
+        self.assertEqual(count(self.collection), 1)
+
+        updated = job_listing_to_chroma_record(
+            make_sample_job("601", title="Updated Title", company="Updated Co", desc="updated description"),
+            embedding=fake_embedding("601-updated"),
+            source="remoteok",
+        )
+
+        add_posting(
+            self.collection,
+            updated["source_id"],
+            updated["embedding"],
+            updated["document"],
+            updated["metadata"],
+        )
+
+        self.assertEqual(count(self.collection), 1)
+
+        retrieved = get_by_id(self.collection, updated["source_id"])
+        self.assertEqual(retrieved["ids"][0], updated["source_id"])
+        self.assertEqual(retrieved["metadatas"][0]["title"], "Updated Title")
+        self.assertEqual(retrieved["metadatas"][0]["company"], "Updated Co")
+        self.assertEqual(retrieved["documents"][0], "updated description")
 
     def test_delete_posting_removes_record(self) -> None:
         record = job_listing_to_chroma_record(
