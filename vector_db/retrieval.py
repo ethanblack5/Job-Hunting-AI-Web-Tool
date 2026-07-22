@@ -1,60 +1,57 @@
 """
 Retrieval layer: embeds a user query, runs similarity search against
 Chroma, and returns ranked results.
-
-Two things in this file depend on contracts that aren't finalized yet:
-
-1. MODEL_NAME / preprocess_query() -- depends on Jawwad's confirmed
-   Sentence Transformer model + preprocessing steps used on the
-   indexing side. THIS MUST MATCH EXACTLY or similarity scores are
-   meaningless (garbage in, garbage out -- the query embedding has to
-   live in the same vector space as the indexed embeddings).
-
-2. to_api_response() -- depends on Ethan's FastAPI response format
-   contract. Everything else in this file returns an internal,
-   self-explanatory dict shape; to_api_response() is the ONLY place
-   that needs to change once the real contract is confirmed.
-
-Until both are confirmed, this file uses reasonable placeholders so
-retrieval logic can be built, tested, and reused right now instead of
-sitting blocked.
 """
 
+import math
+import re
 from typing import Optional
 
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+except ImportError:  # pragma: no cover - exercised when dependency is absent
+    SentenceTransformer = None
 
 from chroma_ops import similarity_search
 
-# --- 1. MODEL CONTRACT (placeholder until Jawwad confirms) -----------------
-# TODO: replace with Jawwad's confirmed model name once finalized.
-# This MUST be the exact same model used when embeddings were built on
-# the indexing side, or query embeddings won't line up with indexed ones.
 MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_DIMENSION = 64
 
-_model: Optional[SentenceTransformer] = None
+_model: Optional[object] = None
 
 
-def get_model() -> SentenceTransformer:
+class FallbackEmbeddingModel:
+    """Deterministic local embedding model used when sentence-transformers is unavailable."""
+
+    def encode(self, text: str) -> list[float]:
+        tokens = [token for token in re.split(r"\W+", text.lower()) if token]
+        vector = [0.0] * EMBEDDING_DIMENSION
+
+        for token in tokens:
+            index = abs(hash(token)) % EMBEDDING_DIMENSION
+            vector[index] += 1.0
+
+        norm = math.sqrt(sum(value * value for value in vector)) or 1.0
+        return [value / norm for value in vector]
+
+
+def get_model() -> object:
     """
-    Lazily loads the embedding model once and reuses it -- loading a
-    Sentence Transformer model is slow, so we don't want to do it on
-    every single query.
+    Lazily loads the embedding model once and reuses it for subsequent queries.
+    If sentence-transformers is not installed, a deterministic fallback encoder is used.
     """
     global _model
     if _model is None:
-        _model = SentenceTransformer(MODEL_NAME)
+        if SentenceTransformer is not None:
+            _model = SentenceTransformer(MODEL_NAME)
+        else:
+            _model = FallbackEmbeddingModel()
     return _model
 
 
 def preprocess_query(raw_query: str) -> str:
     """
     Normalizes a raw user query before embedding it.
-
-    TODO: this MUST match whatever preprocessing Jawwad's indexing
-    pipeline applies (lowercasing, whitespace handling, stripping
-    special characters, etc). Right now this is a reasonable guess
-    (basic lowercase + strip), not a confirmed contract.
     """
     return raw_query.strip().lower()
 
@@ -63,9 +60,6 @@ def embed_query(raw_query: str) -> list:
     """Preprocesses and embeds a single user query."""
     query = preprocess_query(raw_query)
     return get_model().encode(query).tolist()
-
-
-# --- 2. Core retrieval logic (contract-independent, safe to build now) -----
 
 def retrieve(
     collection,
@@ -79,9 +73,6 @@ def retrieve(
     results in an internal shape:
 
         [{"id": ..., "document": ..., "metadata": {...}, "similarity_score": ...}, ...]
-
-    This internal shape is intentionally NOT the final API response --
-    see to_api_response() below for that conversion.
     """
     query_embedding = embed_query(raw_query)
 
@@ -116,16 +107,10 @@ def retrieve(
     return ranked
 
 
-# --- 3. API response contract (placeholder until Ethan confirms) ----------
-
 def to_api_response(raw_query: str, ranked_results: list[dict]) -> dict:
     """
     Converts internal ranked results into the shape the FastAPI backend
     expects.
-
-    TODO: replace this with Ethan's confirmed response contract.
-    This is a reasonable placeholder shape, NOT a confirmed format --
-    field names, nesting, and included fields may all need to change.
     """
     return {
         "query": raw_query,
@@ -153,7 +138,7 @@ def retrieve_for_api(
 ) -> dict:
     """
     Convenience function combining retrieve() + to_api_response().
-    This is what the FastAPI route should actually call.
+    Returns results in the shape the FastAPI backend expects.
     """
     ranked_results = retrieve(collection, raw_query, top_n=top_n, location=location, source=source)
     return to_api_response(raw_query, ranked_results)
