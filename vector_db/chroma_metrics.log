@@ -1,0 +1,72 @@
+2026-07-20 23:48:40,347 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:48:40,373 | INFO | Index size for 'job_postings': 3 postings
+2026-07-20 23:48:40,398 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:48:40,400 | INFO | Index size for 'job_postings': 0 postings
+2026-07-20 23:48:40,446 | INFO | Index size for 'job_postings': 3 postings
+2026-07-20 23:48:40,447 | INFO | Query on 'job_postings' returned 2 results in 0.7ms, filters: source=remoteok
+2026-07-20 23:48:40,448 | INFO | Query on 'job_postings' returned 2 results in 0.5ms, filters: location=Remote
+2026-07-20 23:48:40,476 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:48:40,478 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:49:21,281 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:49:21,302 | INFO | Index size for 'job_postings': 3 postings
+2026-07-20 23:49:21,347 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:49:21,351 | INFO | Index size for 'job_postings': 0 postings
+2026-07-20 23:49:21,396 | INFO | Index size for 'job_postings': 3 postings
+2026-07-20 23:49:21,397 | INFO | Query on 'job_postings' returned 2 results in 0.7ms, filters: source=remoteok
+2026-07-20 23:49:21,398 | INFO | Query on 'job_postings' returned 2 results in 0.4ms, filters: location=Remote
+2026-07-20 23:49:21,424 | INFO | Index size for 'job_postings': 1 postings
+2026-07-20 23:49:21,425 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 00:11:07,590 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 00:11:07,927 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 00:11:07,937 | INFO | Query on 'job_postings' returned 2 results in 1.3ms
+2026-07-21 00:11:07,962 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 00:11:07,974 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 00:11:07,982 | INFO | Query on 'job_postings' returned 2 results in 0.6ms
+2026-07-21 20:44:06,595 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:44:06,615 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:44:06,626 | INFO | Query on 'job_postings' returned 2 results in 2.1ms
+2026-07-21 20:44:06,649 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:44:06,660 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:44:06,669 | INFO | Query on 'job_postings' returned 2 results in 0.6ms
+2026-07-21 20:48:14,030 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:48:14,048 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:48:14,056 | INFO | Query on 'job_postings' returned 2 results in 1.7ms
+2026-07-21 20:48:14,077 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:48:14,086 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:48:14,092 | INFO | Query on 'job_postings' returned 2 results in 0.6ms
+2026-07-21 20:55:27,758 | INFO | Index size for 'job_postings': 6 postings
+2026-07-21 20:55:27,760 | INFO | Query on 'job_postings' returned 3 results in 1.1ms
+2026-07-21 20:55:27,761 | INFO | Query on 'job_postings' returned 5 results in 1.3ms, filters: source=remoteok
+2026-07-21 20:55:27,774 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:27,801 | INFO | Index size for 'job_postings': 3 postings
+2026-07-21 20:55:27,822 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:27,824 | INFO | Index size for 'job_postings': 0 postings
+2026-07-21 20:55:27,867 | INFO | Index size for 'job_postings': 3 postings
+2026-07-21 20:55:27,868 | INFO | Query on 'job_postings' returned 2 results in 0.5ms, filters: source=remoteok
+2026-07-21 20:55:27,868 | INFO | Query on 'job_postings' returned 2 results in 0.4ms, filters: location=Remote
+2026-07-21 20:55:27,894 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:27,896 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:29,366 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:29,386 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:55:29,394 | INFO | Query on 'job_postings' returned 2 results in 0.6ms
+2026-07-21 20:55:29,417 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:55:29,428 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:55:29,436 | INFO | Query on 'job_postings' returned 2 results in 0.5ms
+2026-07-21 20:58:38,596 | INFO | Index size for 'job_postings': 6 postings
+2026-07-21 20:58:38,598 | INFO | Query on 'job_postings' returned 3 results in 1.0ms
+2026-07-21 20:58:38,599 | INFO | Query on 'job_postings' returned 5 results in 1.2ms, filters: source=remoteok
+2026-07-21 20:58:38,613 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:38,636 | INFO | Index size for 'job_postings': 3 postings
+2026-07-21 20:58:38,659 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:38,660 | INFO | Index size for 'job_postings': 0 postings
+2026-07-21 20:58:38,700 | INFO | Index size for 'job_postings': 3 postings
+2026-07-21 20:58:38,701 | INFO | Query on 'job_postings' returned 2 results in 0.8ms, filters: source=remoteok
+2026-07-21 20:58:38,702 | INFO | Query on 'job_postings' returned 2 results in 0.4ms, filters: location=Remote
+2026-07-21 20:58:38,730 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:38,732 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:40,375 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:40,395 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:58:40,404 | INFO | Query on 'job_postings' returned 2 results in 0.5ms
+2026-07-21 20:58:40,426 | INFO | Index size for 'job_postings': 1 postings
+2026-07-21 20:58:40,436 | INFO | Index size for 'job_postings': 2 postings
+2026-07-21 20:58:40,444 | INFO | Query on 'job_postings' returned 2 results in 0.6ms

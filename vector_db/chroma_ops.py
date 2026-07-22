@@ -3,8 +3,10 @@ Vector DB insert/query functions
 Similarity search
 """
 
+import time
 from typing import Optional
 
+from chroma_logging import log_index_size, log_query
 from chroma_schema import REQUIRED_METADATA_FIELDS
 
 
@@ -31,6 +33,7 @@ def add_posting(
         documents=[document],
         metadatas=[metadata],
     )
+    log_index_size(collection)
 
 
 def job_listing_to_chroma_record(
@@ -97,6 +100,7 @@ def add_postings_batch(collection, records: list[dict]):
         documents=documents,
         metadatas=metadatas,
     )
+    log_index_size(collection)
 
 
 def similarity_search(
@@ -105,6 +109,7 @@ def similarity_search(
     n_results: int = 5,
     location: Optional[str] = None,
     source: Optional[str] = None,
+    log_query_activity: bool = True,
 ):
     """
     Run a similarity search against the collection, with
@@ -118,11 +123,24 @@ def similarity_search(
     if source:
         where["source"] = source
 
-    return collection.query(
+    start = time.perf_counter()
+    results = collection.query(
         query_embeddings=[query_embedding],
         n_results=n_results,
         where=where or None,
     )
+    elapsed = time.perf_counter() - start
+
+    if log_query_activity:
+        log_query(
+            collection,
+            len(results.get("ids", [[]])[0]),
+            elapsed,
+            source=source,
+            location=location,
+        )
+
+    return results
 
 
 def get_by_id(collection, source_id: str):
@@ -131,6 +149,7 @@ def get_by_id(collection, source_id: str):
 
 def delete_posting(collection, source_id: str):
     collection.delete(ids=[source_id])
+    log_index_size(collection)
 
 
 def count(collection) -> int:
