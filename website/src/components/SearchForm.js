@@ -27,7 +27,7 @@ function SearchForm({ setSearchResponse }) {
     setSkills(skills.filter((s) => s !== skill));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Request shape per docs/frontend-data-contract.md
@@ -39,11 +39,32 @@ function SearchForm({ setSearchResponse }) {
       top_n: 20,
     };
 
-    // TODO(PR2): replace with fetch('/api/search', { method: 'POST', ... })
-    // once Ethan's endpoint is live. Mock response matches the contract shape.
-    console.log('POST /api/search', request);
-    setSearchResponse(MOCK_RESPONSE);
-  };
+    try {
+    const response = await fetch('/api/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+
+      throw new Error(
+        errorData?.detail ||
+          `Backend returned status ${response.status}`
+      );
+    }
+
+    const responseData = await response.json()
+
+    setSearchResponse(responseData);
+
+  } catch (error) {
+    console.error('Job search failed:', error);
+  }
+};
 
   return (
     <form className="search-form" onSubmit={handleSubmit}>
