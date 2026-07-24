@@ -212,7 +212,7 @@ def to_frontend_job(job: JobListing) -> FrontendJob:
 def search_jobs(request: SearchRequest) -> SearchResponse:
     print("Received frontend search:")
     print(request.model_dump())
-    
+
     query_tags = ",".join(request.skills)
 
     jobs = fetch_job_postings(query_tags=query_tags, position=request.job_title,)
