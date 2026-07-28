@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from chroma_store import ChromaJobStore
-from matching_service import SearchCriteria, SemanticMatchingService
+from .chroma_store import ChromaJobStore
+from .matching_service import SearchCriteria, SemanticMatchingService
 
 
 def precision_at_k(

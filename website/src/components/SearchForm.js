@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { MOCK_RESPONSE } from '../mock/mockResponse';
 
 function SearchForm({ setSearchResponse }) {
   const [jobTitle, setJobTitle] = useState('');

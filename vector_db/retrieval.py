@@ -12,7 +12,10 @@ try:
 except ImportError:  # pragma: no cover - exercised when dependency is absent
     SentenceTransformer = None
 
-from chroma_ops import similarity_search
+try:
+    from .chroma_ops import similarity_search
+except ImportError:  # Support running legacy scripts from vector_db/.
+    from chroma_ops import similarity_search
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 EMBEDDING_DIMENSION = 64
@@ -59,7 +62,8 @@ def preprocess_query(raw_query: str) -> str:
 def embed_query(raw_query: str) -> list:
     """Preprocesses and embeds a single user query."""
     query = preprocess_query(raw_query)
-    return get_model().encode(query).tolist()
+    encoded = get_model().encode(query)
+    return encoded.tolist() if hasattr(encoded, "tolist") else list(encoded)
 
 
 def retrieve(
