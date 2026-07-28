@@ -7,10 +7,10 @@ come back correctly.
 import tempfile
 import unittest
 
-from chroma_schema import get_client, get_or_create_collection
-from chroma_ops import add_posting
-import retrieval
-from retrieval import (
+from vector_db.chroma_schema import get_client, get_or_create_collection
+from vector_db.chroma_ops import add_posting
+import vector_db.retrieval as retrieval
+from vector_db.retrieval import (
     FallbackEmbeddingModel,
     embed_query,
     retrieve,

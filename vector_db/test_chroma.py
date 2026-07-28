@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel
 
-from chroma_ops import (
+from vector_db.chroma_ops import (
     add_posting,
     add_postings_batch,
     count,
@@ -28,14 +28,14 @@ from chroma_ops import (
     job_listing_to_chroma_record,
     similarity_search,
 )
-from chroma_schema import (
+from vector_db.chroma_schema import (
     COLLECTION_NAME,
     REQUIRED_METADATA_FIELDS,
     get_client,
     get_or_create_collection,
 )
-from chroma_logging import report_query_volume
-from sample_remoteok_jobs import RAW_SAMPLE_JOBS
+from vector_db.chroma_logging import report_query_volume
+from vector_db.sample_remoteok_jobs import RAW_SAMPLE_JOBS
 
 EMBED_DIM = 384
 
@@ -208,7 +208,7 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
         ]
         collection = MagicMock()
 
-        with patch("chroma_ops.log_index_size"):
+        with patch("vector_db.chroma_ops.log_index_size"):
             add_postings_batch(collection, records, batch_size=2)
 
         self.assertEqual(collection.upsert.call_count, 3)
