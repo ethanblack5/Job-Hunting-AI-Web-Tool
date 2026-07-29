@@ -15,10 +15,11 @@ import random
 import tempfile
 import unittest
 from typing import Any, Dict, List
+from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel
 
-from chroma_ops import (
+from vector_db.chroma_ops import (
     add_posting,
     add_postings_batch,
     count,
@@ -27,9 +28,14 @@ from chroma_ops import (
     job_listing_to_chroma_record,
     similarity_search,
 )
-from chroma_schema import get_client, get_or_create_collection, REQUIRED_METADATA_FIELDS
-from chroma_logging import report_query_volume
-from sample_remoteok_jobs import RAW_SAMPLE_JOBS
+from vector_db.chroma_schema import (
+    COLLECTION_NAME,
+    REQUIRED_METADATA_FIELDS,
+    get_client,
+    get_or_create_collection,
+)
+from vector_db.chroma_logging import report_query_volume
+from vector_db.sample_remoteok_jobs import RAW_SAMPLE_JOBS
 
 EMBED_DIM = 384
 
@@ -130,7 +136,7 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
 
     def test_get_or_create_collection_returns_collection(self) -> None:
         self.assertIsNotNone(self.collection)
-        self.assertEqual(self.collection.name, "job_postings")
+        self.assertEqual(self.collection.name, COLLECTION_NAME)
 
     def test_job_listing_to_chroma_record_converts_values(self) -> None:
         raw_job = make_sample_job("123", tags=["patient", "remote"], min_salary=None, max_salary=None)
@@ -190,6 +196,31 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
 
         add_postings_batch(self.collection, records)
         self.assertEqual(count(self.collection), 3)
+
+    def test_add_postings_batch_chunks_large_inputs(self) -> None:
+        records = [
+            job_listing_to_chroma_record(
+                make_sample_job(str(i)),
+                embedding=fake_embedding(str(i)),
+                source="remoteok",
+            )
+            for i in range(5)
+        ]
+        collection = MagicMock()
+
+        with patch("vector_db.chroma_ops.log_index_size"):
+            add_postings_batch(collection, records, batch_size=2)
+
+        self.assertEqual(collection.upsert.call_count, 3)
+        batch_lengths = [
+            len(call.kwargs["ids"])
+            for call in collection.upsert.call_args_list
+        ]
+        self.assertEqual(batch_lengths, [2, 2, 1])
+
+    def test_add_postings_batch_rejects_invalid_batch_size(self) -> None:
+        with self.assertRaisesRegex(ValueError, "batch_size"):
+            add_postings_batch(self.collection, [], batch_size=0)
 
     def test_similarity_search_logs_index_and_query_activity(self) -> None:
         record = job_listing_to_chroma_record(
@@ -258,6 +289,25 @@ class ChromaOpsSchemaTestCase(unittest.TestCase):
         )
 
         self.assertTrue(all(metadata["location"] == "Remote" for metadata in filtered_by_location["metadatas"][0]))
+
+    def test_similarity_search_caps_top_k_to_collection_size(self) -> None:
+        records = [
+            job_listing_to_chroma_record(
+                make_sample_job(str(i)),
+                embedding=fake_embedding(str(i)),
+                source="remoteok",
+            )
+            for i in range(3)
+        ]
+        add_postings_batch(self.collection, records)
+
+        results = similarity_search(
+            self.collection,
+            fake_embedding("job"),
+            n_results=500,
+        )
+
+        self.assertEqual(len(results["ids"][0]), 3)
 
     def test_upsert_updates_existing_record_instead_of_creating_duplicates(self) -> None:
         original = job_listing_to_chroma_record(

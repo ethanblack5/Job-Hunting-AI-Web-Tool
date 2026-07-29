@@ -13,7 +13,7 @@ from chromadb.config import Settings
 
 # Client setup
 
-DB_PATH = Path(__file__).parent / "chroma_store"
+DB_PATH = Path(__file__).resolve().parent / "chroma_store"
 
 
 def get_client(path: str = str(DB_PATH)) -> chromadb.PersistentClient:
@@ -26,7 +26,9 @@ def get_client(path: str = str(DB_PATH)) -> chromadb.PersistentClient:
     )
 
 
-COLLECTION_NAME = "job_postings"
+# This collection has a stable 384-dimensional MiniLM schema. It intentionally
+# uses a new name so older test/fallback embeddings are never mixed into it.
+COLLECTION_NAME = "job_postings_v2"
 
 REQUIRED_METADATA_FIELDS = [
     "title",
@@ -42,11 +44,15 @@ REQUIRED_METADATA_FIELDS = [
 ]
 
 
-def get_or_create_collection(client=None):
+def get_or_create_collection(client=None, collection_name: str = COLLECTION_NAME):
     """Creates the job_postings collection. Uses cosine similarity,
     which is standard for text-embedding similarity search."""
     client = client or get_client()
     return client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
+        name=collection_name,
+        metadata={
+            "hnsw:space": "cosine",
+            "embedding_model": "all-MiniLM-L6-v2",
+            "embedding_dimension": 384,
+        },
     )

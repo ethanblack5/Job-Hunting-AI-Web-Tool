@@ -6,8 +6,15 @@ Similarity search
 import time
 from typing import Optional
 
-from chroma_logging import log_index_size, log_query
-from chroma_schema import REQUIRED_METADATA_FIELDS
+try:
+    from .chroma_logging import log_index_size, log_query
+    from .chroma_schema import REQUIRED_METADATA_FIELDS
+except ImportError:  # Support running legacy scripts from vector_db/.
+    from chroma_logging import log_index_size, log_query
+    from chroma_schema import REQUIRED_METADATA_FIELDS
+
+DEFAULT_UPSERT_BATCH_SIZE = 100
+MAX_QUERY_RESULTS = 50
 
 
 def add_posting(
@@ -51,13 +58,20 @@ def job_listing_to_chroma_record(
     elif hasattr(job, "dict"):
         job = job.dict()
 
-    tags = job.get("tags", [])
+    source_id = job.get("id", job.get("job_id"))
+    if source_id is None:
+        raise ValueError("Job must contain job_id or id.")
+
+    tags = job.get("tags", job.get("skills", []))
     tags_str = ",".join(tags) if isinstance(tags, list) else str(tags)
+    description = job.get("desc", job.get("description", ""))
+    date_posted = job.get("date_posted", job.get("date", ""))
+    salary = job.get("cleaned_salary", job.get("salary", "")) or ""
 
     return {
-        "source_id": str(job["job_id"]),
+        "source_id": str(source_id),
         "embedding": embedding,
-        "document": job.get("desc", ""),
+        "document": job.get("embedding_text") or description,
         "metadata": {
             "title": job.get("title", ""),
             "company": job.get("company", ""),
@@ -66,18 +80,30 @@ def job_listing_to_chroma_record(
             "apply_url": job.get("apply_url", ""),
             "remoteok_url": job.get("remoteok_url", ""),
             "source": source,
-            "date_posted": job.get("date_posted", ""),
+            "date_posted": date_posted,
             "min_salary": job.get("min_salary") or 0,
             "max_salary": job.get("max_salary") or 0,
+            "salary": salary,
+            "description": description,
+            "role_type": job.get("role_type") or "",
         },
     }
 
 
-def add_postings_batch(collection, records: list[dict]):
+def add_postings_batch(
+    collection,
+    records: list[dict],
+    batch_size: int = DEFAULT_UPSERT_BATCH_SIZE,
+):
     """
     Bulk insert. Each record must have:
     source_id, embedding, document, metadata.
     """
+    if batch_size <= 0:
+        raise ValueError("batch_size must be greater than zero.")
+    if not records:
+        return
+
     ids, embeddings, documents, metadatas = [], [], [], []
     for r in records:
         missing = [
@@ -94,12 +120,14 @@ def add_postings_batch(collection, records: list[dict]):
         documents.append(r["document"])
         metadatas.append(r["metadata"])
 
-    collection.upsert(
-        ids=ids,
-        embeddings=embeddings,
-        documents=documents,
-        metadatas=metadatas,
-    )
+    for start in range(0, len(records), batch_size):
+        stop = start + batch_size
+        collection.upsert(
+            ids=ids[start:stop],
+            embeddings=embeddings[start:stop],
+            documents=documents[start:stop],
+            metadatas=metadatas[start:stop],
+        )
     log_index_size(collection)
 
 
@@ -110,6 +138,7 @@ def similarity_search(
     location: Optional[str] = None,
     source: Optional[str] = None,
     log_query_activity: bool = True,
+    include: Optional[list[str]] = None,
 ):
     """
     Run a similarity search against the collection, with
@@ -117,6 +146,23 @@ def similarity_search(
     query_embedding must come from the same embedding model
     used at insert time.
     """
+    if n_results <= 0:
+        raise ValueError("n_results must be greater than zero.")
+
+    collection_size = collection.count()
+    effective_results = min(
+        n_results,
+        MAX_QUERY_RESULTS,
+        collection_size,
+    )
+    if effective_results == 0:
+        return {
+            "ids": [[]],
+            "documents": [[]],
+            "metadatas": [[]],
+            "distances": [[]],
+        }
+
     where = {}
     if location:
         where["location"] = location
@@ -124,10 +170,16 @@ def similarity_search(
         where["source"] = source
 
     start = time.perf_counter()
+    query_arguments = {
+        "query_embeddings": [query_embedding],
+        "n_results": effective_results,
+        "where": where or None,
+    }
+    if include is not None:
+        query_arguments["include"] = include
+
     results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n_results,
-        where=where or None,
+        **query_arguments,
     )
     elapsed = time.perf_counter() - start
 
