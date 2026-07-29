@@ -1,132 +1,172 @@
 # Job-Hunting AI Web Tool
 
-This project contains a React frontend and a FastAPI backend for searching
-RemoteOK job listings.
+This project has a React frontend and a FastAPI backend. Run them in two
+separate terminal windows during development.
 
 ## Prerequisites
 
 - Python 3.10 or newer
 - Node.js and npm
 
-## Run the backend locally
-
-From the repository root:
+Check that they are installed:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 --version
+node --version
+npm --version
+```
+
+On macOS, if `npm` is not found :
+
+```bash
+brew install node
+```
+
+## Start the backend
+
+```bash
+cd /Users/user/Job-Hunting-AI-Web-Tool
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Install the project dependencies:
+
+```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install "fastapi[standard]" requests beautifulsoup4 ftfy
 ```
 
-The backend currently uses imports relative to its `python` directory. Start
-it with:
+Start FastAPI from the repository root:
 
 ```bash
-cd python
-python -m uvicorn api:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn python.api:app --reload
 ```
 
-The API documentation is available at:
+The backend is now available at:
 
-<http://127.0.0.1:8000/docs>
+- API: <http://127.0.0.1:8000>
+- Interactive API documentation: <http://127.0.0.1:8000/docs>
+- RemoteOK jobs endpoint: <http://127.0.0.1:8000/job-batch/>
 
-## Run the frontend locally
-
-In a second terminal:
+Populate the shared `job_postings_v2` ChromaDB collection from RemoteOK:
 
 ```bash
-cd website
+curl -X POST "http://127.0.0.1:8000/api/jobs/refresh"
+```
+
+Run a semantic search against the indexed jobs:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "job_title": "machine learning engineer",
+    "skills": ["python", "pytorch"],
+    "location": "remote",
+    "experience_level": "mid",
+    "top_n": 10
+  }'
+```
+
+## Start the frontend
+
+Open a second terminal and run:
+
+```bash
+cd /Users/user/Job-Hunting-AI-Web-Tool/website
 npm install
 npm start
 ```
 
-Open <http://localhost:3000>. The development proxy forwards `/api` requests
-to the backend at `http://127.0.0.1:8000`.
+The React development server should open automatically. If it does not, visit:
 
-## Run semantic matching
+<http://localhost:3000>
 
-Activate the virtual environment and install the semantic-ranking
-dependencies:
+Stop the frontend with `Ctrl+C`.
+
+After the first setup, you normally only need:
+
+```bash
+cd /Users/user/Job-Hunting-AI-Web-Tool/website
+npm start
+```
+
+## Run semantic ranking
+
+Activate your Python virtual environment from the repository root:
+
+```bash
+cd /Users/user/Job-Hunting-AI-Web-Tool
+source venv/bin/activate
+```
+
+If your environment is named `.venv` instead, use:
 
 ```bash
 source .venv/bin/activate
+```
+
+Install the semantic-ranking dependencies into the active environment:
+
+```bash
 python -m pip install sentence-transformers scikit-learn requests
+```
+
+Confirm that the packages are installed in the Python environment currently in
+use:
+
+```bash
+which python
+python -c "import sentence_transformers, sklearn; print('Dependencies installed')"
+```
+
+Run the pipeline from the `semantic_matching` directory:
+
+```bash
 cd semantic_matching
 ```
 
-Fetch and normalize sample jobs:
+First, fetch a sample of jobs from RemoteOK:
 
 ```bash
 python remoteok_client.py --limit 25
+```
+
+Next, clean and normalize the job records:
+
+```bash
 python preprocess_jobs.py
 ```
 
-Run a semantic-ranking query:
+Finally, rank the jobs against a natural-language query:
 
 ```bash
-python semantic_baseline.py \
-  "Python machine learning engineer with cloud experience"
+python semantic_baseline.py "Python machine learning engineer with cloud experience"
 ```
 
-The first run may take longer because the sentence-transformer model must be
-downloaded.
-
-## Run tests
-
-From the repository root with the virtual environment active:
+To return a different number of results:
 
 ```bash
-python -m pytest
+python semantic_baseline.py "React frontend developer" --top-k 10
 ```
 
-## EC2 deployment
+This workflow creates:
 
-The backend can run behind Nginx using Uvicorn bound only to the EC2 loopback
-interface:
-
-```bash
-cd /home/ubuntu/Job-Hunting-AI-Web-Tool/python
-source ../.venv/bin/activate
-python -m uvicorn api:app --host 127.0.0.1 --port 8000
+```text
+remoteok_jobs_raw.json
+remoteok_jobs_normalized.json
 ```
 
-Recommended EC2 security-group inbound rules:
+The first ranking run downloads the `all-MiniLM-L6-v2` model and therefore
+requires an internet connection. Later runs use the cached model.
 
-| Type | Port | Source |
-| --- | ---: | --- |
-| SSH | 22 | Your public IP address (`/32`) |
-| HTTP | 80 | `0.0.0.0/0` |
-| HTTPS | 443 | `0.0.0.0/0` |
+## Run both services
 
-Do not expose Uvicorn port 8000 or ChromaDB directly to the internet. Use
-Nginx on ports 80 and 443 as the public entry point.
+Keep both terminal windows running:
 
-Build the React frontend for production:
-
-```bash
-cd /home/ubuntu/Job-Hunting-AI-Web-Tool/website
-npm install
-npm run build
+```text
+Terminal 1: FastAPI  -> http://127.0.0.1:8000
+Terminal 2: React    -> http://localhost:3000
 ```
 
-The generated static site is placed in `website/build` and can be served by
-Nginx. Configure Nginx to proxy `/api/` to `http://127.0.0.1:8000` so the
-frontend and backend share the same origin.
-
-## Common problems
-
-If port 8000 is already in use:
-
-```bash
-sudo lsof -i :8000
-```
-
-If a Python module is missing, confirm that the virtual environment is active
-and reinstall the dependencies:
-
-```bash
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-```
