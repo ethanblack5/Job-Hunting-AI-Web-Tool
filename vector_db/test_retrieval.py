@@ -7,15 +7,9 @@ come back correctly.
 import tempfile
 import unittest
 
-from vector_db.chroma_schema import get_client, get_or_create_collection
-from vector_db.chroma_ops import add_posting
-import vector_db.retrieval as retrieval
-from vector_db.retrieval import (
-    FallbackEmbeddingModel,
-    embed_query,
-    retrieve,
-    retrieve_for_api,
-)
+from chroma_schema import get_client, get_or_create_collection
+from chroma_ops import add_posting
+from retrieval import retrieve, retrieve_for_api, embed_query
 
 
 def sample_metadata(**overrides):
@@ -37,8 +31,6 @@ def sample_metadata(**overrides):
 
 class RetrievalTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        # Keep this unit test deterministic and independent of model downloads.
-        retrieval._model = FallbackEmbeddingModel()
         self.tempdir = tempfile.TemporaryDirectory()
         self.client = get_client(path=self.tempdir.name)
         self.collection = get_or_create_collection(self.client)

@@ -9,8 +9,8 @@ in vector_db/.
 
 from fastapi import APIRouter, Query
 
-from .chroma_schema import get_client, get_or_create_collection
-from .retrieval import retrieve_for_api
+from chroma_schema import get_client, get_or_create_collection
+from retrieval import retrieve_for_api
 
 router = APIRouter()
 

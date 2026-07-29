@@ -2,18 +2,9 @@ import requests
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from collections import Counter
-from datetime import datetime, timezone
-from functools import lru_cache
+from api_description_cleaning import clean_description
+from api_salary_extraction import extract_salary_bounds
 import re
-
-from .api_description_cleaning import clean_description
-from .api_salary_extraction import extract_salary_bounds
-from semantic_matching.chroma_store import ChromaJobStore
-from semantic_matching.matching_service import (
-    SearchCriteria,
-    SemanticMatchingService,
-)
 # pip install requests fastapi[standard] pydantic
 
 app = FastAPI()
@@ -32,7 +23,6 @@ app.add_middleware(
 )
 
 url = "https://www.remoteok.com/api"
-index_last_updated: datetime | None = None
 
 headers = {
     "User-Agent": "Job-Hunting-AI-Web-Tool/1.0"
@@ -62,15 +52,9 @@ class JobListing(BaseModel):
 class SearchRequest(BaseModel):
     job_title: str = ""
     skills: list[str] = Field(default_factory=list)
-    location: str = "remote"
+    location: str = ""
     experience_level: str = ""
-    top_n: int = Field(default=20, ge=1, le=50)
-
-
-@lru_cache(maxsize=1)
-def get_matching_service() -> SemanticMatchingService:
-    """Load the embedding model and shared Chroma collection once."""
-    return SemanticMatchingService(ChromaJobStore())
+    top_n: int = Field(default=20, ge=1, le=100)
 
 
 class FrontendJob(BaseModel):
@@ -90,7 +74,6 @@ class FrontendJob(BaseModel):
 class SearchResponse(BaseModel):
     query_echo: SearchRequest
     match_count: int
-    index_last_updated: str | None = None
     results: list[FrontendJob]
     analytics: dict
 
@@ -183,7 +166,7 @@ def fetch_job_postings(
             max_salary=None,
             cleaned_salary=None,
             apply_url=str(raw_job.get("apply_url", "")),
-            job_id=f"remoteok-{raw_job.get('id')}",
+            job_id=f"remoteok:{raw_job.get('id')}",
             tags=raw_tags,
             desc=str(raw_job.get("description", "")),
             remoteok_url=str(raw_job.get("url", "")),
@@ -207,6 +190,69 @@ def get_job_postings(
         date=date,
     )
     return jobs[:n]
+
+
+def to_frontend_job(job: JobListing) -> FrontendJob:
+    return FrontendJob(
+        id=job.job_id,
+        score=None,
+        title=job.title,
+        company=job.company or None,
+        location=job.location or None,
+        salary=job.cleaned_salary,
+        role_type=None,
+        date_listed=job.date_posted or None,
+        description=job.desc,
+        skills=job.tags,
+        apply_url=job.apply_url or job.remoteok_url,
+    )
+
+
+@app.post("/api/search", response_model=SearchResponse,)
+def search_jobs(request: SearchRequest) -> SearchResponse:
+    print("Received frontend search:")
+    print(request.model_dump())
+
+    query_tags = ",".join(request.skills)
+
+    jobs = fetch_job_postings(query_tags=query_tags, position=request.job_title,)
+
+    # apply location filtering locally
+    if request.location and request.location.casefold() != "remote":
+        requested_location = request.location.casefold()
+
+        jobs = [job for job in jobs if requested_location in job.location.casefold()]
+
+    selected_jobs = jobs[:request.top_n]
+
+    frontend_jobs = [to_frontend_job(job) for job in selected_jobs]
+
+    skill_counts: dict[str, int] = {}
+
+    for job in selected_jobs:
+        for skill in job.tags:
+            skill_counts[skill] = skill_counts.get(skill, 0) + 1
+
+    skill_frequency = [
+        {
+            "skill": skill,
+            "count": count,
+        }
+        for skill, count in sorted(
+            skill_counts.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+    ]
+
+    return SearchResponse(
+        query_echo=request,
+        match_count=len(frontend_jobs),
+        results=frontend_jobs,
+        analytics={
+            "skill_frequency": skill_frequency,
+        },
+    )
 
 
 def combine_salary_bounds(
@@ -241,103 +287,12 @@ def process_job(job: JobListing) -> JobListing:
     })
 
     job.desc = clean_description(job.desc)
-
-    has_supplied_salary = any(
-        value not in (None, "", "0")
-        for value in (job.min_salary, job.max_salary)
-    )
-    if not job.cleaned_salary and not has_supplied_salary:
-        job.min_salary, job.max_salary = extract_salary_bounds(job.desc)
-        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
-    elif not job.cleaned_salary:
-        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
+    job.min_salary, job.max_salary = extract_salary_bounds(job.desc)
+    job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary,)
 
     return job
 
 
 @app.post("/api/jobs")
 def post_jobs(jobs: list[JobListing]):
-    """Embed and upsert normalized backend jobs into shared ChromaDB."""
-    processed_jobs = [process_job(job.model_copy(deep=True)) for job in jobs]
-    return index_jobs(processed_jobs)
-
-
-def index_jobs(jobs: list[JobListing]) -> dict:
-    """Index already-normalized jobs and record the refresh time."""
-    global index_last_updated
-    get_matching_service().index_jobs(jobs)
-    index_last_updated = datetime.now(timezone.utc)
-    return {
-        "status": "Success",
-        "count_jobs": len(jobs),
-        "index_last_updated": index_last_updated.isoformat(),
-    }
-
-
-@app.post("/api/jobs/refresh")
-def refresh_jobs(
-    query_tags: str = "",
-    position: str = "",
-    date: str = "",
-    n: int = Query(default=20, ge=1, le=100),
-):
-    """Fetch RemoteOK jobs, normalize them, and refresh the shared index."""
-    jobs = fetch_job_postings(
-        query_tags=query_tags,
-        position=position,
-        date=date,
-    )[:n]
-    return index_jobs(jobs)
-
-
-@app.post("/api/search", response_model=SearchResponse)
-def search_jobs(request: SearchRequest) -> SearchResponse:
-    """Run semantic search against jobs indexed through /api/jobs."""
-    if not (
-        request.job_title.strip()
-        or request.skills
-        or request.location.strip()
-        or request.experience_level.strip()
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="At least one search field is required.",
-        )
-
-    criteria = SearchCriteria(
-        title=request.job_title.strip(),
-        skills=tuple(skill.strip() for skill in request.skills if skill.strip()),
-        location=request.location.strip(),
-        experience_level=request.experience_level.strip(),
-    )
-
-    try:
-        service = get_matching_service()
-        if service.store.collection.count() == 0:
-            index_jobs(fetch_job_postings())
-        results = service.search(criteria, top_k=request.top_n)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Semantic search is unavailable: {exc}",
-        ) from exc
-
-    skill_counts = Counter(
-        skill
-        for result in results
-        for skill in result.get("skills", [])
-    )
-    return SearchResponse(
-        query_echo=request,
-        match_count=len(results),
-        index_last_updated=(
-            index_last_updated.isoformat() if index_last_updated else None
-        ),
-        results=results,
-        analytics={
-            "skill_frequency": [
-                {"skill": skill, "count": count}
-                for skill, count in skill_counts.most_common(10)
-            ]
-        },
-    )
+    return {"status": "Success", "count_jobs": len(jobs), "received_jobs": jobs}
