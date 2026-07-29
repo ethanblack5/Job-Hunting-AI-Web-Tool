@@ -6,7 +6,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-import python.api as api
+import fastapi_backend.api as api
 from semantic_matching.chroma_store import ChromaJobStore
 from semantic_matching.matching_service import SemanticMatchingService
 
