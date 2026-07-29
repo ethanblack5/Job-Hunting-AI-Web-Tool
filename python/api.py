@@ -179,8 +179,8 @@ def fetch_job_postings(
             company=str(raw_job.get("company", "")),
             date_posted=raw_date,
             location=str(raw_job.get("location", "")),
-            min_salary=None,
-            max_salary=None,
+            min_salary=str(raw_job.get("salary_min", 0)),
+            max_salary=str(raw_job.get("salary_max", 0)),
             cleaned_salary=None,
             apply_url=str(raw_job.get("apply_url", "")),
             job_id=f"remoteok-{raw_job.get('id')}",
@@ -242,15 +242,22 @@ def process_job(job: JobListing) -> JobListing:
 
     job.desc = clean_description(job.desc)
 
-    has_supplied_salary = any(
-        value not in (None, "", "0")
-        for value in (job.min_salary, job.max_salary)
+    extracted_min = None
+    extracted_max = None
+
+    if job.min_salary == "0" or job.max_salary == "0":
+        extracted_min, extracted_max = extract_salary_bounds(job.desc)
+
+    if job.min_salary == "0":
+        job.min_salary = extracted_min
+
+    if job.max_salary == "0":
+        job.max_salary = extracted_max
+
+    job.cleaned_salary = combine_salary_bounds(
+        job.min_salary,
+        job.max_salary,
     )
-    if not job.cleaned_salary and not has_supplied_salary:
-        job.min_salary, job.max_salary = extract_salary_bounds(job.desc)
-        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
-    elif not job.cleaned_salary:
-        job.cleaned_salary = combine_salary_bounds(job.min_salary, job.max_salary)
 
     return job
 
