@@ -191,9 +191,11 @@ Terminal 1: FastAPI  -> http://127.0.0.1:8000
 Terminal 2: React    -> http://localhost:3000
 ```
 
-The current search form still contains a placeholder for the backend request,
-so starting both services does not by itself connect the React search form to
-the FastAPI API.
+## AWS deployment hardening
+
+The EC2 security-group allowlist and automated EBS snapshot workflow are
+documented in [infra/aws/README.md](infra/aws/README.md). The accompanying
+script is plan-only unless it is run with `--apply`.
 
 ## Common errors
 
