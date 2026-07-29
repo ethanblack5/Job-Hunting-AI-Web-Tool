@@ -1,3 +1,8 @@
 chromadb
+beautifulsoup4
+fastapi[standard]
+ftfy
 pydantic
+requests
+scikit-learn
 sentence-transformers

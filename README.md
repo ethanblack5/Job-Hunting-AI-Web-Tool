@@ -40,7 +40,7 @@ python -m pip install -r requirements.txt
 Start FastAPI from the repository root:
 
 ```bash
-python -m uvicorn python.api:app --reload
+python -m uvicorn fastapi_backend.api:app --reload
 ```
 
 The backend is now available at:
@@ -169,4 +169,3 @@ Keep both terminal windows running:
 Terminal 1: FastAPI  -> http://127.0.0.1:8000
 Terminal 2: React    -> http://localhost:3000
 ```
-
