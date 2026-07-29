@@ -388,6 +388,72 @@
   filter: brightness(1.08);
 }
 
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.btn-primary:disabled:hover {
+  filter: none;
+}
+
+/* Loading state swaps the arrow for a small spinner and stops the hover glow. */
+.btn-primary.loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-primary.loading::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-ink);
+  border-top-color: transparent;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Search error banner */
+
+.search-error {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(192, 91, 77, 0.1);
+  border: 1px solid rgba(192, 91, 77, 0.4);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: var(--weak);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.search-error-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.search-error-dismiss:hover {
+  opacity: 1;
+}
+
 .btn-secondary {
   background: transparent;
   color: var(--ink);

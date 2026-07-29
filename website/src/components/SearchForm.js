@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { MOCK_RESPONSE } from '../mock/mockResponse';
 
 function SearchForm({ setSearchResponse }) {
   const [jobTitle, setJobTitle] = useState('');
@@ -7,6 +6,8 @@ function SearchForm({ setSearchResponse }) {
   const [experienceLevel, setExperienceLevel] = useState('');
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   const addSkill = () => {
     const trimmed = skillInput.trim();
@@ -30,6 +31,11 @@ function SearchForm({ setSearchResponse }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSearching) return;
+
+    setSearchError(null);
+    setIsSearching(true);
+
     // Request shape per docs/frontend-data-contract.md
     const request = {
       job_title: jobTitle,
@@ -40,31 +46,41 @@ function SearchForm({ setSearchResponse }) {
     };
 
     try {
-    const response = await fetch('/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
 
-      throw new Error(
-        errorData?.detail ||
-          `Backend returned status ${response.status}`
+        throw new Error(
+          errorData?.detail || `Backend returned status ${response.status}`
+        );
+      }
+
+      const responseData = await response.json();
+
+      setSearchResponse(responseData);
+    } catch (error) {
+      console.error('Job search failed:', error);
+
+      // TODO(PR3): tighten this once the backend's error response shape is
+      // settled (data contract §7, still open). For now this covers both
+      // network failures (fetch throws directly) and backend error
+      // responses we surface via the thrown Error above.
+      setSearchError(
+        error.message === 'Failed to fetch'
+          ? "Can't reach the server. Check that the backend is running and try again."
+          : error.message || 'Something went wrong. Please try again.'
       );
+    } finally {
+      setIsSearching(false);
     }
-
-    const responseData = await response.json()
-
-    setSearchResponse(responseData);
-
-  } catch (error) {
-    console.error('Job search failed:', error);
-  }
-};
+  };
 
   return (
     <form className="search-form" onSubmit={handleSubmit}>
@@ -136,8 +152,27 @@ function SearchForm({ setSearchResponse }) {
         <option value="principal">Principal</option>
       </select>
 
-      <button type="submit" className="btn-primary">
-        Search Jobs
+      {searchError && (
+        <div className="search-error" role="alert">
+          <span>{searchError}</span>
+          <button
+            type="button"
+            className="search-error-dismiss"
+            onClick={() => setSearchError(null)}
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <button
+        type="submit"
+        className={isSearching ? 'btn-primary loading' : 'btn-primary'}
+        disabled={isSearching}
+        aria-busy={isSearching}
+      >
+        {isSearching ? 'Searching' : 'Search Jobs'}
       </button>
     </form>
   );
