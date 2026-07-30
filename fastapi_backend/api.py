@@ -123,16 +123,16 @@ def fetch_job_postings(
             detail="Remote OK request timed out.",
         ) from exc
 
-    except requests.exceptions.RequestException as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Remote OK request failed: {exc}",
-        ) from exc
-
     except requests.exceptions.JSONDecodeError as exc:
         raise HTTPException(
             status_code=502,
             detail="Remote OK returned invalid JSON.",
+        ) from exc
+
+    except requests.exceptions.RequestException as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Remote OK request failed: {exc}",
         ) from exc
 
     requested_tags = {
