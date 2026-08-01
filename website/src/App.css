@@ -681,6 +681,12 @@
   flex-shrink: 0;
 }
 
+.score-ring svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .score-ring-track {
   stroke: var(--line);
 }
@@ -729,6 +735,50 @@
   font-size: 0.9rem;
   line-height: 1.6;
   margin: 0;
+}
+
+.skill-chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-chart-row {
+  display: grid;
+  grid-template-columns: 76px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-chart-label {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-chart-track {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.skill-chart-fill {
+  background: var(--accent);
+  height: 100%;
+  border-radius: 4px;
+}
+
+.skill-chart-count {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  text-align: right;
 }
 
 .score-guide ul {
@@ -804,4 +854,65 @@
   padding: 48px 40px;
   text-align: center;
   color: var(--ink-soft);
+}
+
+/* ---------- Mobile tightening (results page) ---------- */
+
+@media (max-width: 480px) {
+  .results-page {
+    padding: 16px 16px 48px;
+  }
+
+  .filter-bar {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  .filter-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .results-grid {
+    gap: 16px;
+  }
+
+  .results-list {
+    gap: 16px;
+  }
+
+  .job-card {
+    padding: 18px;
+  }
+
+  .job-card-header {
+    gap: 14px;
+  }
+
+  .score-ring {
+    width: 52px;
+    height: 52px;
+  }
+
+  .score-ring-label {
+    font-size: 0.7rem;
+  }
+
+  .job-title {
+    font-size: 1.02rem;
+  }
+
+  .apply-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .chart-placeholder,
+  .score-guide {
+    padding: 18px;
+  }
+
+  .empty-state {
+    padding: 32px 20px;
+  }
 }
