@@ -520,6 +520,7 @@
 .filter-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .sort-btn {
@@ -543,6 +544,24 @@
   border-color: var(--accent);
   color: var(--accent-ink);
   background: var(--accent);
+}
+
+.min-score-select {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color-scheme: dark;
+}
+
+.min-score-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /* ---------- Results: grid ---------- */
@@ -692,9 +711,19 @@
 }
 
 .score-ring-fill {
-  stroke: var(--strong);
   transform: rotate(-90deg);
   transform-origin: center;
+}
+
+/* Ring color mirrors the score guide tiers so the legend actually
+   explains what you're seeing on each card. */
+.score-ring-fill.ring-strong { stroke: var(--strong); }
+.score-ring-fill.ring-good { stroke: var(--good); }
+.score-ring-fill.ring-partial { stroke: var(--partial); }
+.score-ring-fill.ring-weak { stroke: var(--weak); }
+
+.score-ring-label-empty {
+  color: var(--ink-soft);
 }
 
 .score-ring-label {
@@ -863,6 +892,11 @@
     padding: 16px 16px 48px;
   }
 
+  .min-score-select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .filter-bar {
     padding: 12px;
     margin-bottom: 20px;
@@ -904,6 +938,7 @@
 
   .apply-link {
     width: 100%;
+    box-sizing: border-box;
     text-align: center;
   }
 
