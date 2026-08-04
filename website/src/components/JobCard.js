@@ -1,3 +1,5 @@
+import { bucketForScore } from '../scoreThresholds';
+
 // Renders one ranked job result per the UI/UX spec:
 // score ring, role, company, location, salary, role type, listing date,
 // description, skill tags, apply link.
@@ -5,19 +7,33 @@
 // role_type, and date_listed can be null and are hidden when absent.
 
 function ScoreRing({ score }) {
-  // score: 0.0–1.0 similarity (assumed pending Chloe's confirmation on
-  // score direction — see data contract §6).
-  const pct = Math.round(score * 100);
   const radius = 26;
   const circumference = 2 * Math.PI * radius;
+  const bucket = bucketForScore(score);
+
+  // No score means retrieval didn't return one for this posting. Show an
+  // empty, neutral ring rather than rendering it as 0%, which would read
+  // as "terrible match" instead of "not scored".
+  if (bucket === null) {
+    return (
+      <div className="score-ring" title="No match score available">
+        <svg viewBox="0 0 64 64" role="img" aria-label="No match score available">
+          <circle className="score-ring-track" cx="32" cy="32" r={radius} strokeWidth="6" fill="none" />
+        </svg>
+        <span className="score-ring-label score-ring-label-empty">—</span>
+      </div>
+    );
+  }
+
+  const pct = Math.round(score * 100);
   const filled = circumference * score;
 
   return (
-    <div className="score-ring" title={`Match score: ${pct}%`}>
-      <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={`Match score ${pct} percent`}>
+    <div className="score-ring" title={`Match score: ${pct}% (${bucket.label})`}>
+      <svg viewBox="0 0 64 64" role="img" aria-label={`Match score ${pct} percent, ${bucket.label}`}>
         <circle className="score-ring-track" cx="32" cy="32" r={radius} strokeWidth="6" fill="none" />
         <circle
-          className="score-ring-fill"
+          className={`score-ring-fill ring-${bucket.key}`}
           cx="32"
           cy="32"
           r={radius}

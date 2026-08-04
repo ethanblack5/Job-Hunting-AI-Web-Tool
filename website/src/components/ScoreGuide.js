@@ -1,20 +1,16 @@
+import { SCORE_BUCKETS } from '../scoreThresholds';
+
 // Match score legend per UI/UX spec (Figure 7).
-// Thresholds are PLACEHOLDERS — final buckets come from Jawwad's ranking
-// evaluation (data contract §6, P2). Update BUCKETS when confirmed.
-const BUCKETS = [
-  { label: 'Strong match', range: '80–100%', className: 'bucket-strong' },
-  { label: 'Good match', range: '60–79%', className: 'bucket-good' },
-  { label: 'Partial match', range: '40–59%', className: 'bucket-partial' },
-  { label: 'Weak match', range: 'Below 40%', className: 'bucket-weak' },
-];
+// Bucket thresholds live in scoreThresholds.js so the guide and the
+// results filter (ResultsPage.js) stay in sync.
 
 function ScoreGuide() {
   return (
     <aside className="score-guide">
       <h3>Match Score Guide</h3>
       <ul>
-        {BUCKETS.map((b) => (
-          <li key={b.label}>
+        {SCORE_BUCKETS.map((b) => (
+          <li key={b.key}>
             <span className={`bucket-dot ${b.className}`} aria-hidden="true" />
             <span className="bucket-label">{b.label}</span>
             <span className="bucket-range">{b.range}</span>
